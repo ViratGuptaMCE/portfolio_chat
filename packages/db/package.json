@@ -1,0 +1,23 @@
+{
+  "name": "@portfoliochat/db",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.3",
+    "better-auth": "^1.1.18",
+    "drizzle-orm": "^0.31.2",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.22.8",
+    "typescript": "^5.5.3",
+    "@types/node": "^20.14.9"
+  }
+}
