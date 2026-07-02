@@ -33,6 +33,8 @@ PLAN.md
 phase.md
 DESIGN.md
 TABLES.md
+LOG.md
+*.sample.md
 
 # debug
 npm-debug.log*

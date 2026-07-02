@@ -17,21 +17,27 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 ## Ingestion & Embedding Pipeline
 
 ```
-[1. PDF / Text Upload] ──► Dashboard Server Action parses binary PDF via `pdf-parse`
-                                 │
-                                 ▼
-[2. Neon Postgres]     ──► Stores `extractedText` & initializes status = 'processing'
-                                 │
-                                 ▼
-[3. Fastify Webhook]   ──► `apps/api` splits text into 512-token chunks using `@langchain/textsplitters`
-                                 │
-                                 ▼
+[1. PDF / Text Entry]  ──► Dashboard Server Action parses text & inserts into Neon DB
+                                  │
+                                  ▼
+[2. Upstash QStash]    ──► Publishes ingestion job asynchronously to QStash Queue
+                                  │
+                                  ▼
+[3. Fastify Webhook]   ──► `apps/api` splits content into 512-token chunks via `@langchain/textsplitters`
+                                  │
+                                  ▼
 [4. Cloudflare Worker] ──► Dispatches `POST ${CLOUDFLARE_WORKER_URL}/embed` per chunk
                            └─ Generates `@cf/baai/bge-large-en-v1.5` Workers AI embeddings
                            └─ Inserts vectors into Cloudflare Vectorize DB
-                                 │
-                                 ▼
-[5. Finalized]         ──► Updates document status to 'ready' and stores chunk count in Neon Postgres
+                                  │
+                                  ▼
+[5. Finalized]         ──► Updates document / knowledge entry status to 'ready' in Neon Postgres
+                                  │
+                                  ▼
+[6. Real-Time Cache]   ──► Invalidates Upstash Redis key (`redisDel`); next read serves cached 'ready' data
+                                  │
+                                  ▼
+[7. Deletion Cleanup]  ──► On delete, triggers `POST /delete-vectors` to erase vector chunks from Cloudflare Vectorize
 ```
 
 ---
@@ -43,6 +49,7 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 - **Parsing**: `pdf-parse` for binary PDF text extraction
 - **Styling & Aesthetic**: Modern Tech-Minimalist design system with monochromatic high-contrast UI
 - **Animations**: Framer Motion (Emil Kowalski design engineering principles: fluid `layoutId` tab transitions, spring physics, micro-interactions)
+- **Knowledge Base Management**: Manual text entry & PDF upload fully synchronized with database schema (`category`, `tags`, `content`, `version`, category filtering, read-only parsed PDF text viewer modal, and edit modal with versioning).
 - **Authentication**: Better Auth with Email/Password, Magic Link, Nodemailer SMTP verification, and Google OAuth support
 
 ### Backend (`apps/api`)

@@ -18,4 +18,5 @@ const sql = neon(process.env.DATABASE_URL || 'postgres://localhost:5432/mock');
 // Export the Drizzle client, schema, and drizzle-orm operators
 export const db = drizzle(sql, { schema });
 export * from './schema.js';
+export * from './redis.js';
 export * from 'drizzle-orm';
