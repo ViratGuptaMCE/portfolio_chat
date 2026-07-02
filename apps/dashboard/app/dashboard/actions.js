@@ -276,11 +276,17 @@ export async function updateKnowledgeEntry(userId, projectId, entryId, { title, 
     );
     if (!project) throw new Error("Unauthorized");
 
-    // Fetch current entry to increment version
+    // Fetch current entry to increment version & cleanup previous vector embeddings
     const [existing] = await db.select().from(knowledgeEntries).where(
       and(eq(knowledgeEntries.id, entryId), eq(knowledgeEntries.projectId, projectId))
     );
     if (!existing) throw new Error("Entry not found");
+
+    // Purge previous vector chunks from Cloudflare Vectorize DB
+    if (existing.chunkCount && existing.chunkCount > 0) {
+      console.log(`[ENTRY EDIT] Purging ${existing.chunkCount} old vector chunks for entry ${entryId}...`);
+      triggerVectorDeletionWebhook({ entryId, chunkCount: existing.chunkCount, projectId });
+    }
 
     const parsedTags = Array.isArray(tags) 
       ? tags.map(t => t.trim()).filter(Boolean) 

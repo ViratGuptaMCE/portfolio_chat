@@ -291,7 +291,7 @@ export default function KnowledgeBasePage({ params }) {
           onClick={() => setActiveTab("text")}
           className={`relative px-2 py-3 text-sm font-medium transition-colors ${activeTab === 'text' ? 'text-black dark:text-white font-semibold' : 'text-[#666] dark:text-[#888] hover:text-black dark:hover:text-white'}`}
         >
-          Manual Text Entries ({entries.length})
+          Manual Entries ({entries.length})
           {activeTab === 'text' && (
             <motion.div layoutId="kb-tab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
           )}
@@ -428,9 +428,8 @@ export default function KnowledgeBasePage({ params }) {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-black dark:text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-xl">post_add</span>
-                  Add Knowledge Context Entry
+                  Tell us about you
                 </h3>
-                <span className="text-[11px] font-mono uppercase tracking-widest text-[#888]">Synced with TABLES.md</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -654,9 +653,6 @@ export default function KnowledgeBasePage({ params }) {
               <div className="flex justify-between items-start gap-4">
                 <div className="flex flex-col gap-1 overflow-hidden">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#888] bg-[#f4f4f5] dark:bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#e5e5e5] dark:border-[#222]">
-                      Read-Only Parsed Text
-                    </span>
                     {selectedDocForView.fileSizeBytes && (
                       <span className="text-[10px] font-mono text-[#888]">
                         {(selectedDocForView.fileSizeBytes / 1024).toFixed(1)} KB
@@ -693,7 +689,7 @@ export default function KnowledgeBasePage({ params }) {
 
               {/* Modal Footer */}
               <div className="flex justify-between items-center pt-2">
-                <span className="text-[11px] font-mono text-[#888]">Select and copy text freely</span>
+                <div></div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleCopyText(selectedDocForView.extractedText)}
@@ -810,7 +806,7 @@ export default function KnowledgeBasePage({ params }) {
                     ) : (
                       <span className="material-symbols-outlined text-lg">save</span>
                     )}
-                    Update & Re-process (Bumps Version)
+                    Update
                   </button>
                 </div>
               </form>
