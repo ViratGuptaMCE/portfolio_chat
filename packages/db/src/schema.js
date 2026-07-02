@@ -174,7 +174,6 @@ export const chatSessions = pgTable('chat_sessions', {
 }, (t) => ({
   idx_chat_sessions_project_id: index('idx_chat_sessions_project_id').on(t.projectId),
   idx_chat_sessions_last_active: index('idx_chat_sessions_last_active').on(t.lastActiveAt),
-  // idx_chat_sessions_flagged: index('idx_chat_sessions_flagged').on(t.projectId, t.isFlagged).where(sql`is_flagged = true`) // Drizzle doesn't perfectly support partial indexes yet in this syntax without raw sql for index creation
 }));
 
 export const conversationMessages = pgTable('conversation_messages', {

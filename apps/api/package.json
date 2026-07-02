@@ -2,27 +2,24 @@
   "name": "@portfoliochat/api",
   "version": "1.0.0",
   "private": true,
-  "main": "src/index.ts",
+  "type": "module",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "tsx watch --env-file=../../.env.local src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "dev": "dotenv -e ../../.env.local -- node --watch src/index.js",
+    "build": "echo 'No build step required for JS'",
+    "start": "dotenv -e ../../.env.local -- node src/index.js",
     "lint": "eslint ."
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
+    "@langchain/textsplitters": "^0.1.0",
     "@portfoliochat/db": "*",
     "@upstash/qstash": "^2.6.2",
     "better-auth": "^1.1.18",
     "dotenv": "^16.4.5",
+    "dotenv-cli": "^8.0.0",
     "fastify": "^4.27.0",
     "fastify-plugin": "^4.5.1",
-    "@langchain/textsplitters": "^0.1.0",
     "pdf-parse": "^1.1.1"
-  },
-  "devDependencies": {
-    "@types/node": "^20.14.9",
-    "tsx": "^4.16.0",
-    "typescript": "^5.5.3"
   }
 }

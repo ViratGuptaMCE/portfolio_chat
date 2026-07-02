@@ -1,12 +1,8 @@
-import { FastifyInstance } from 'fastify';
-import { db, projects } from '@portfoliochat/db';
-import { eq } from 'drizzle-orm';
+import { db, projects, eq } from '@portfoliochat/db';
 
-export default async function (server: FastifyInstance) {
-  // Example internal route: Get project details
-  // Note: In production, you would verify the Better Auth session token here
+export default async function (server) {
   server.get('/projects/:projectId', async (request, reply) => {
-    const { projectId } = request.params as { projectId: string };
+    const { projectId } = request.params;
     
     try {
       const project = await db.query.projects.findFirst({

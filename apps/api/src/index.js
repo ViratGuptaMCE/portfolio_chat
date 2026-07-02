@@ -2,9 +2,11 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import webhookRoutes from './routes/webhooks/index.js';
+import internalRoutes from './routes/internal/index.js';
 
 // Load environment variables from the root .env.local
-dotenv.config({ path: path.resolve(__dirname, '../../../.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
 
 const server = fastify({ logger: true });
 
@@ -14,10 +16,7 @@ server.register(cors, {
   credentials: true,
 });
 
-// Import and register routes
-import webhookRoutes from './routes/webhooks';
-import internalRoutes from './routes/internal';
-
+// Register routes
 server.register(webhookRoutes, { prefix: '/webhooks' });
 server.register(internalRoutes, { prefix: '/internal' });
 
