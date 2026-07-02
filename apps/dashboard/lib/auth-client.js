@@ -1,11 +1,11 @@
-import { createAuthClient } from "@neondatabase/auth";
-import { BetterAuthReactAdapter } from "@neondatabase/auth/react/adapters";
+import { createAuthClient } from "better-auth/react";
+import { magicLinkClient } from "better-auth/client/plugins";
 
-// Initialize Neon Auth Client
-// NEON_AUTH_BASE_URL comes from .env.local
-export const authClient = createAuthClient(
-  process.env.NEXT_PUBLIC_NEON_AUTH_URL || 'https://ep-still-leaf-ats8mxr3.neonauth.c-9.us-east-1.aws.neon.tech/neondb/auth',
-  { adapter: BetterAuthReactAdapter() }
-);
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  plugins: [
+    magicLinkClient()
+  ]
+});
 
-export const { signIn, signUp, signOut, useSession } = authClient;
+export const { signIn, signUp, signOut, useSession, forgetPassword, resetPassword, updateUser, changePassword } = authClient;

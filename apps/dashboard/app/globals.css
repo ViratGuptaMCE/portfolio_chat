@@ -1,88 +1,103 @@
 @import "tailwindcss";
-/* Material Design 3 Light Theme Tokens (Basic mapping) */
+
 :root {
-  /* Colors */
-  --md-sys-color-primary: #6750a4;
+  /* Base backgrounds — deep obsidian, never pure black */
+  --bg-void: #09090b;        /* outermost background */
+  --bg-base: #0f0f11;        /* page background */
+  --bg-elevated: #18181b;    /* raised sections */
+
+  /* Surfaces — translucent zinc glass, vary opacity by elevation, not by inventing new grays */
+  --surface-glass: rgba(39, 39, 42, 0.6);
+  --surface-glass-strong: rgba(39, 39, 42, 0.85);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+
+  /* Brand + system accents — each color is reserved for a meaning, don't mix them freely */
+  --accent-indigo: #6366f1;   /* primary brand, primary actions, active states */
+  --accent-purple: #a855f7;   /* API / "developer path" surfaces specifically */
+  --accent-emerald: #10b981;  /* success, online, ready states only */
+  --accent-amber: #f59e0b;    /* warnings only */
+  --accent-rose: #f43f5e;     /* destructive / errors only */
+
+  /* Material Design 3 Dark Theme Tokens mapped to our design system */
+  --md-sys-color-primary: var(--accent-indigo);
   --md-sys-color-on-primary: #ffffff;
-  --md-sys-color-primary-container: #eaddff;
-  --md-sys-color-on-primary-container: #21005d;
+  --md-sys-color-primary-container: rgba(99, 102, 241, 0.2);
+  --md-sys-color-on-primary-container: #e0e7ff;
   
-  --md-sys-color-background: #fdfcff;
-  --md-sys-color-on-background: #1a1c1e;
+  --md-sys-color-background: var(--bg-void);
+  --md-sys-color-on-background: var(--text-primary);
   
-  --md-sys-color-surface: #fdfcff;
-  --md-sys-color-on-surface: #1a1c1e;
-  --md-sys-color-surface-variant: #e7e0ec;
-  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-surface: var(--bg-base);
+  --md-sys-color-on-surface: var(--text-primary);
+  --md-sys-color-surface-variant: var(--bg-elevated);
+  --md-sys-color-on-surface-variant: var(--text-secondary);
   
-  --md-sys-color-surface-container: #f3edf7;
-  --md-sys-color-surface-container-high: #ece6f0;
+  --md-sys-color-surface-container: var(--bg-elevated);
+  --md-sys-color-surface-container-high: rgba(39, 39, 42, 0.4);
   
-  --md-sys-color-outline: #79747e;
-  --md-sys-color-outline-variant: #cac4d0;
+  --md-sys-color-outline: var(--surface-border-strong);
+  --md-sys-color-outline-variant: var(--surface-border);
+  
+  --md-sys-color-error: var(--accent-rose);
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: rgba(244, 63, 94, 0.2);
+  --md-sys-color-on-error-container: #ffe4e6;
 
   /* Emil's Animation Easing Curves */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --md-sys-color-primary: #d0bcff;
-    --md-sys-color-on-primary: #381e72;
-    --md-sys-color-primary-container: #4f378b;
-    --md-sys-color-on-primary-container: #eaddff;
-    
-    --md-sys-color-background: #1a1c1e;
-    --md-sys-color-on-background: #e2e2e6;
-    
-    --md-sys-color-surface: #1a1c1e;
-    --md-sys-color-on-surface: #e2e2e6;
-    --md-sys-color-surface-variant: #49454f;
-    --md-sys-color-on-surface-variant: #cac4d0;
-    
-    --md-sys-color-surface-container: #211f26;
-    --md-sys-color-surface-container-high: #2b2930;
-    
-    --md-sys-color-outline: #938f99;
-    --md-sys-color-outline-variant: #49454f;
-  }
+  
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-primary: var(--md-sys-color-primary);
-  --color-on-primary: var(--md-sys-color-on-primary);
-  --color-primary-container: var(--md-sys-color-primary-container);
-  --color-on-primary-container: var(--md-sys-color-on-primary-container);
+  --color-bg-void: var(--bg-void);
+  --color-bg-base: var(--bg-base);
+  --color-bg-elevated: var(--bg-elevated);
   
-  --color-background: var(--md-sys-color-background);
-  --color-on-background: var(--md-sys-color-on-background);
+  --color-surface-glass: var(--surface-glass);
+  --color-surface-glass-strong: var(--surface-glass-strong);
   
-  --color-surface: var(--md-sys-color-surface);
-  --color-on-surface: var(--md-sys-color-on-surface);
-  --color-surface-variant: var(--md-sys-color-surface-variant);
-  --color-on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --color-surface-border: var(--surface-border);
+  --color-surface-border-strong: var(--surface-border-strong);
   
-  --color-surface-container: var(--md-sys-color-surface-container);
-  --color-surface-container-high: var(--md-sys-color-surface-container-high);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
   
-  --color-outline: var(--md-sys-color-outline);
-  --color-outline-variant: var(--md-sys-color-outline-variant);
+  --color-accent-indigo: var(--accent-indigo);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-emerald: var(--accent-emerald);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-rose: var(--accent-rose);
 
-  --font-sans: 'Roboto', var(--font-geist-sans);
+  --font-sans: 'Inter', var(--font-inter), sans-serif;
+  --font-mono: 'JetBrains Mono', var(--font-jetbrains-mono), monospace;
 }
 
 body {
-  background: var(--md-sys-color-background);
-  color: var(--md-sys-color-on-background);
+  background: var(--bg-void);
+  color: var(--text-primary);
   font-family: var(--font-sans);
+  /* The design should be dark-mode native */
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Material Symbols for Web Components */
 /* Emil's Button Scale on Press */
 md-filled-button, md-text-button, md-elevated-button, md-outlined-button {
   transition: transform 160ms var(--ease-out);
+  /* Force MD buttons to use our typography */
+  --md-sys-typescale-label-large-font: var(--font-sans);
+  --md-sys-typescale-label-large-weight: 500;
+  --md-sys-typescale-label-large-tracking: 0.01em;
 }
 
 md-filled-button:active, md-text-button:active, md-elevated-button:active, md-outlined-button:active {

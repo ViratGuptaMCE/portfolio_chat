@@ -5,8 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 if (typeof window !== "undefined") {
-  import("@material/web/tabs/tabs.js");
-  import("@material/web/tabs/primary-tab.js");
   import("@material/web/icon/icon.js");
 }
 
@@ -14,7 +12,7 @@ export default function ProjectLayout({ children, params }) {
   const router = useRouter();
   const pathname = usePathname();
   
-  // Need to unwrap params in Next.js 15
+  // Need to unwrap params in Next.js 15+
   const unwrappedParams = use(params);
   const { projectId } = unwrappedParams;
 
@@ -26,31 +24,51 @@ export default function ProjectLayout({ children, params }) {
     { label: "Settings", path: `/dashboard/projects/${projectId}/settings`, icon: "settings" },
   ];
 
-  const activeTabIndex = tabs.findIndex(tab => pathname === tab.path) !== -1 
-    ? tabs.findIndex(tab => pathname === tab.path) 
-    : 0;
-
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8 max-w-6xl mx-auto w-full pt-6 px-4 md:px-0">
       {/* Project Header */}
-      <header className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <md-icon style={{ color: "var(--md-sys-color-primary)", cursor: 'pointer' }} onClick={() => router.push('/dashboard')}>arrow_back</md-icon>
-          <h1 className="text-display-small font-medium text-on-background">Project Settings</h1>
+      <header className="flex flex-col gap-6">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => router.push('/dashboard')}
+            className="w-10 h-10 rounded-xl bg-surface-glass border border-surface-border flex items-center justify-center hover:bg-surface-border/50 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] transition-all active:scale-[0.95]"
+          >
+            <md-icon style={{ color: "var(--text-secondary)", fontSize: 20 }}>arrow_back</md-icon>
+          </button>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Project Command Center</h1>
+            <p className="text-xs text-text-tertiary font-mono uppercase tracking-widest">{projectId}</p>
+          </div>
         </div>
 
-        {/* MD3 Tabs */}
-        <md-tabs activeTabIndex={activeTabIndex} onChange={(e) => {
-          const index = e.target.activeTabIndex;
-          if (tabs[index]) router.push(tabs[index].path);
-        }}>
-          {tabs.map((tab, idx) => (
-            <md-primary-tab key={tab.path} active={idx === activeTabIndex}>
-              <md-icon slot="icon">{tab.icon}</md-icon>
-              {tab.label}
-            </md-primary-tab>
-          ))}
-        </md-tabs>
+        {/* Custom Tabs */}
+        <div className="flex items-center gap-1 border-b border-surface-border pb-px overflow-x-auto">
+          {tabs.map((tab) => {
+            const isActive = pathname === tab.path;
+            return (
+              <button
+                key={tab.path}
+                onClick={() => router.push(tab.path)}
+                className={`relative px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 rounded-t-lg ${
+                  isActive 
+                    ? "text-accent-indigo bg-accent-indigo/5" 
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface-border/30"
+                }`}
+              >
+                <md-icon style={{ fontSize: 16 }}>{tab.icon}</md-icon>
+                {tab.label}
+                {isActive && (
+                  <motion.div 
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-indigo shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </header>
 
       {/* Page Content */}
@@ -59,6 +77,7 @@ export default function ProjectLayout({ children, params }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        className="w-full relative z-0"
       >
         {children}
       </motion.div>

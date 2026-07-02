@@ -1,3 +1,10 @@
+import { config } from 'dotenv';
+import path from 'path';
+
+// Ensure env vars are loaded when this package is imported outside of Next.js
+config({ path: path.resolve(process.cwd(), '.env.local') });
+config({ path: path.resolve(process.cwd(), '../../.env.local') });
+
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
