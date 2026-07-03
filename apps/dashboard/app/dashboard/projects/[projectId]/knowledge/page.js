@@ -7,6 +7,7 @@ import {
   getDocuments, 
   getKnowledgeEntries, 
   getWebsiteSources,
+  getQuotaUsage,
   createKnowledgeEntry, 
   updateKnowledgeEntry,
   uploadDocument,
@@ -43,6 +44,7 @@ export default function KnowledgeBasePage({ params }) {
   const [documents, setDocuments] = useState([]);
   const [entries, setEntries] = useState([]);
   const [websites, setWebsites] = useState([]);
+  const [quota, setQuota] = useState(null);
 
   // Category Filter for Text Entries
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
@@ -77,14 +79,16 @@ export default function KnowledgeBasePage({ params }) {
   const loadData = async (silent = false) => {
     if (!session?.user?.id) return;
     if (!silent) setLoading(true);
-    const [docs, ents, webs] = await Promise.all([
+    const [docs, ents, webs, qData] = await Promise.all([
       getDocuments(session.user.id, projectId),
       getKnowledgeEntries(session.user.id, projectId),
-      getWebsiteSources(session.user.id, projectId)
+      getWebsiteSources(session.user.id, projectId),
+      getQuotaUsage(session.user.id, projectId)
     ]);
     setDocuments(docs || []);
     setEntries(ents || []);
     setWebsites(webs || []);
+    setQuota(qData || null);
     if (!silent) setLoading(false);
   };
 
@@ -152,14 +156,19 @@ export default function KnowledgeBasePage({ params }) {
     setIsUploading(false);
   };
 
-  const handleAddWebsite = async (url) => {
+  const handleAddWebsite = async (url, title = null, content = null) => {
     if (!url || !session?.user?.id) return;
     setIsScraping(true);
     setNotification(null);
 
-    const res = await addWebsiteSource(session.user.id, projectId, url);
+    const res = await addWebsiteSource(session.user.id, projectId, url, title, content);
     if (res.success) {
-      setNotification({ type: 'success', message: `Website content successfully scraped and indexed into project vector DB!` });
+      setNotification({
+        type: 'success',
+        message: content 
+          ? `GitHub README successfully saved and indexed into project vector DB!` 
+          : `Website content successfully scraped and indexed into project vector DB!`
+      });
       await loadData(true);
     } else {
       setNotification({ type: 'error', message: res.error || "Failed to crawl website URL" });
@@ -297,6 +306,96 @@ export default function KnowledgeBasePage({ params }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Quota & Capacity Usage Card */}
+      {quota && (
+        <div className="bg-white dark:bg-[#111] border border-[#e5e5e5] dark:border-[#222] rounded-[2rem] p-5 shadow-sm flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-xl text-black dark:text-white">
+                pie_chart
+              </span>
+              <h3 className="text-sm font-bold text-black dark:text-white uppercase tracking-wider font-mono">
+                Free Tier Quota & Capacity Usage
+              </h3>
+            </div>
+            <span className="text-[11px] font-mono text-[#888]">
+              Daily limits reset at 00:00 UTC
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* PDF Quota */}
+            <div className="p-3.5 rounded-2xl bg-[#fafafa] dark:bg-[#09090b] border border-[#e5e5e5]/80 dark:border-[#1f1f23] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-black dark:text-white">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+                  PDF Uploads
+                </span>
+                <span className="font-mono text-[11px] text-[#666] dark:text-[#aaa]">
+                  {quota.pdf.dailyUsed}/{quota.pdf.dailyLimit} Today
+                </span>
+              </div>
+              <div className="w-full bg-[#eaeaea] dark:bg-[#1f1f23] h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-black dark:bg-white h-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (quota.pdf.dailyUsed / quota.pdf.dailyLimit) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] font-mono text-[#888]">
+                <span>Chunk Storage</span>
+                <span className="font-semibold text-black dark:text-white">{quota.pdf.chunksUsed} / {quota.pdf.chunksLimit} chunks</span>
+              </div>
+            </div>
+
+            {/* Knowledge Entries Quota */}
+            <div className="p-3.5 rounded-2xl bg-[#fafafa] dark:bg-[#09090b] border border-[#e5e5e5]/80 dark:border-[#1f1f23] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-black dark:text-white">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base">edit_note</span>
+                  Knowledge Entries
+                </span>
+                <span className="font-mono text-[11px] text-[#666] dark:text-[#aaa]">
+                  {quota.knowledge.dailyUsed}/{quota.knowledge.dailyLimit} Today
+                </span>
+              </div>
+              <div className="w-full bg-[#eaeaea] dark:bg-[#1f1f23] h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-black dark:bg-white h-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (quota.knowledge.dailyUsed / quota.knowledge.dailyLimit) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] font-mono text-[#888]">
+                <span>Chunk Storage</span>
+                <span className="font-semibold text-black dark:text-white">{quota.knowledge.chunksUsed} / {quota.knowledge.chunksLimit} chunks</span>
+              </div>
+            </div>
+
+            {/* Web & GitHub Imports Quota */}
+            <div className="p-3.5 rounded-2xl bg-[#fafafa] dark:bg-[#09090b] border border-[#e5e5e5]/80 dark:border-[#1f1f23] flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-black dark:text-white">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base">language</span>
+                  Web & GitHub URLs
+                </span>
+                <span className="font-mono text-[11px] text-[#666] dark:text-[#aaa]">
+                  {quota.web.dailyUsed}/{quota.web.dailyLimit} Today
+                </span>
+              </div>
+              <div className="w-full bg-[#eaeaea] dark:bg-[#1f1f23] h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-black dark:bg-white h-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (quota.web.dailyUsed / quota.web.dailyLimit) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] font-mono text-[#888]">
+                <span>Stored: {quota.web.urlsStored}/{quota.web.urlsLimit}</span>
+                <span className="font-semibold text-black dark:text-white">{quota.web.chunksUsed} / {quota.web.chunksLimit} chunks</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modular Section Tabs */}
       <div className="flex gap-4 border-b border-[#e5e5e5] dark:border-[#222] pb-px overflow-x-auto relative z-10">

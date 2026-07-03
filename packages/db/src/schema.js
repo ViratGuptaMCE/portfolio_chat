@@ -228,3 +228,16 @@ export const templates = pgTable('templates', {
   isPremium: boolean('is_premium').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 });
+
+export const userDailyUsage = pgTable('user_daily_usage', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  usageDate: text('usage_date').notNull(), // 'YYYY-MM-DD' UTC date format
+  pdfUploadsCount: integer('pdf_uploads_count').default(0),
+  knowledgeEntriesCount: integer('knowledge_entries_count').default(0),
+  urlImportsCount: integer('url_imports_count').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (t) => ({
+  idx_user_daily_usage_lookup: index('idx_user_daily_usage_lookup').on(t.userId, t.usageDate)
+}));

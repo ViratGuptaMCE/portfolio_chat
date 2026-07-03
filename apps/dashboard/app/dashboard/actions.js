@@ -2,7 +2,7 @@
 
 import pdfParse from "pdf-parse";
 import crypto from "crypto";
-import { db, projects, knowledgeEntries, documents, websiteSources, redisGet, redisSet, redisDel } from "@portfoliochat/db";
+import { db, projects, knowledgeEntries, documents, websiteSources, userDailyUsage, redisGet, redisSet, redisDel } from "@portfoliochat/db";
 import { eq, and } from "drizzle-orm";
 
 export async function getUserProjects(userId) {
@@ -212,26 +212,34 @@ async function triggerVectorDeletionWebhook(payload) {
   const apiUrl = process.env.API_URL || "http://localhost:8080";
   const qstashToken = process.env.QSTASH_TOKEN;
   const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
-  const isLocalTarget = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
+  const isLocalTarget =
+    apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
 
   if (qstashToken && !isLocalTarget) {
     const destinationUrl = `${apiUrl}/webhooks/delete-vectors`;
-    const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
+    const cleanBase = rawQStashUrl
+      .replace(/\/+$/, "")
+      .replace(/\/v2\/publish$/, "");
     const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
 
-    console.log(`[QSTASH QUEUE] Publishing vector deletion job to Upstash QStash at ${publishUrl}...`);
+    console.log(
+      `[QSTASH QUEUE] Publishing vector deletion job to Upstash QStash at ${publishUrl}...`,
+    );
     try {
       await fetch(publishUrl, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${qstashToken}`,
+          Authorization: `Bearer ${qstashToken}`,
           "Content-Type": "application/json",
-          "Upstash-Retries": "3"
+          "Upstash-Retries": "3",
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
     } catch (err) {
-      console.error(`[QSTASH QUEUE ERROR] Failed to publish vector deletion to QStash:`, err.message);
+      console.error(
+        `[QSTASH QUEUE ERROR] Failed to publish vector deletion to QStash:`,
+        err.message,
+      );
     }
   }
 
@@ -241,8 +249,101 @@ async function triggerVectorDeletionWebhook(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-    .then((res) => console.log(`[VECTOR DELETE API TRIGGER] Direct vector deletion response status: ${res.status}`))
-    .catch((err) => console.log(`[VECTOR DELETE API TRIGGER] Direct API trigger: ${err.message}`));
+    .then((res) =>
+      console.log(
+        `[VECTOR DELETE API TRIGGER] Direct vector deletion response status: ${res.status}`,
+      ),
+    )
+    .catch((err) =>
+      console.log(
+        `[VECTOR DELETE API TRIGGER] Direct API trigger: ${err.message}`,
+      ),
+    );
+}
+
+async function incrementDailyUsage(userId, type) {
+  const todayUtc = new Date().toISOString().split('T')[0];
+  try {
+    const [existing] = await db.select().from(userDailyUsage).where(
+      and(eq(userDailyUsage.userId, userId), eq(userDailyUsage.usageDate, todayUtc))
+    );
+
+    if (!existing) {
+      await db.insert(userDailyUsage).values({
+        userId,
+        usageDate: todayUtc,
+        pdfUploadsCount: type === 'pdf' ? 1 : 0,
+        knowledgeEntriesCount: type === 'knowledge' ? 1 : 0,
+        urlImportsCount: type === 'url' ? 1 : 0
+      });
+    } else {
+      const updateData = {};
+      if (type === 'pdf') updateData.pdfUploadsCount = (existing.pdfUploadsCount || 0) + 1;
+      if (type === 'knowledge') updateData.knowledgeEntriesCount = (existing.knowledgeEntriesCount || 0) + 1;
+      if (type === 'url') updateData.urlImportsCount = (existing.urlImportsCount || 0) + 1;
+
+      await db.update(userDailyUsage)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(eq(userDailyUsage.id, existing.id));
+    }
+  } catch (error) {
+    console.error("Error incrementing daily usage:", error);
+  }
+}
+
+export async function getQuotaUsage(userId, projectId) {
+  if (!userId || !projectId) return null;
+
+  const todayUtc = new Date().toISOString().split('T')[0];
+
+  try {
+    let [dailyUsage] = await db.select().from(userDailyUsage).where(
+      and(eq(userDailyUsage.userId, userId), eq(userDailyUsage.usageDate, todayUtc))
+    );
+
+    if (!dailyUsage) {
+      dailyUsage = {
+        pdfUploadsCount: 0,
+        knowledgeEntriesCount: 0,
+        urlImportsCount: 0
+      };
+    }
+
+    const projectDocs = await db.select({ chunkCount: documents.chunkCount }).from(documents).where(eq(documents.projectId, projectId));
+    const projectEntries = await db.select({ chunkCount: knowledgeEntries.chunkCount }).from(knowledgeEntries).where(eq(knowledgeEntries.projectId, projectId));
+    const projectWebsites = await db.select({ chunkCount: websiteSources.chunkCount }).from(websiteSources).where(eq(websiteSources.projectId, projectId));
+
+    const pdfChunksUsed = projectDocs.reduce((acc, doc) => acc + (doc.chunkCount || 0), 0);
+    const knowledgeChunksUsed = projectEntries.reduce((acc, entry) => acc + (entry.chunkCount || 0), 0);
+    const webChunksUsed = projectWebsites.reduce((acc, web) => acc + (web.chunkCount || 0), 0);
+    const urlsStoredCount = projectWebsites.length;
+
+    return {
+      pdf: {
+        dailyUsed: dailyUsage.pdfUploadsCount || 0,
+        dailyLimit: 10,
+        chunksUsed: pdfChunksUsed,
+        chunksLimit: 200
+      },
+      knowledge: {
+        dailyUsed: dailyUsage.knowledgeEntriesCount || 0,
+        dailyLimit: 50,
+        chunksUsed: knowledgeChunksUsed,
+        chunksLimit: 100
+      },
+      web: {
+        dailyUsed: dailyUsage.urlImportsCount || 0,
+        dailyLimit: 5,
+        urlsStored: urlsStoredCount,
+        urlsLimit: 5,
+        chunksUsed: webChunksUsed,
+        chunksLimit: 200
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching quota usage:", error);
+    return null;
+  }
 }
 
 export async function createKnowledgeEntry(userId, projectId, { title, category = "other", content, tags = [] }) {
@@ -254,6 +355,19 @@ export async function createKnowledgeEntry(userId, projectId, { title, category 
       and(eq(projects.id, projectId), eq(projects.userId, userId))
     );
     if (!project) throw new Error("Unauthorized");
+
+    const estimatedChunks = Math.max(1, Math.ceil(content.length / 1750));
+
+    // Quota pre-validation
+    const quota = await getQuotaUsage(userId, projectId);
+    if (quota) {
+      if (quota.knowledge.dailyUsed >= quota.knowledge.dailyLimit) {
+        return { success: false, error: `Daily Knowledge Entry limit reached (${quota.knowledge.dailyLimit}/${quota.knowledge.dailyLimit} today). Resets at 00:00 UTC.` };
+      }
+      if (quota.knowledge.chunksUsed + estimatedChunks > quota.knowledge.chunksLimit) {
+        return { success: false, error: `Knowledge storage capacity exceeded (${quota.knowledge.chunksUsed}/${quota.knowledge.chunksLimit} chunks used). Adding ${estimatedChunks} chunks would exceed the limit. Delete existing entries to free up capacity.` };
+      }
+    }
 
     const parsedTags = Array.isArray(tags) 
       ? tags.map(t => t.trim()).filter(Boolean) 
@@ -268,10 +382,13 @@ export async function createKnowledgeEntry(userId, projectId, { title, category 
       content,
       tags: parsedTags,
       status: 'processing',
-      chunkCount: Math.max(1, Math.ceil(content.length / 500)),
+      chunkCount: estimatedChunks,
       version: 1
     }).returning();
     
+    // Increment daily quota counter
+    await incrementDailyUsage(userId, 'knowledge');
+
     // Invalidate Redis cache
     await redisDel(`knowledge:${projectId}`);
 
@@ -301,6 +418,17 @@ export async function updateKnowledgeEntry(userId, projectId, entryId, { title, 
     );
     if (!existing) throw new Error("Entry not found");
 
+    const estimatedChunks = Math.max(1, Math.ceil(content.length / 1750));
+
+    // Capacity pre-validation (editing does not consume daily reset counter, but enforces storage limit)
+    const quota = await getQuotaUsage(userId, projectId);
+    if (quota) {
+      const netChunks = (quota.knowledge.chunksUsed - (existing.chunkCount || 0)) + estimatedChunks;
+      if (netChunks > quota.knowledge.chunksLimit) {
+        return { success: false, error: `Updating this entry to ${estimatedChunks} chunks would exceed the Knowledge storage limit (${quota.knowledge.chunksLimit} chunks max).` };
+      }
+    }
+
     // Purge previous vector chunks from Cloudflare Vectorize DB
     if (existing.chunkCount && existing.chunkCount > 0) {
       console.log(`[ENTRY EDIT] Purging ${existing.chunkCount} old vector chunks for entry ${entryId}...`);
@@ -323,7 +451,7 @@ export async function updateKnowledgeEntry(userId, projectId, entryId, { title, 
         tags: parsedTags,
         status: 'processing',
         version: nextVersion,
-        chunkCount: Math.max(1, Math.ceil(content.length / 500)),
+        chunkCount: estimatedChunks,
         updatedAt: new Date()
       })
       .where(
@@ -498,8 +626,19 @@ export async function uploadDocument(userId, projectId, formData) {
       extractedText = `Document content for ${fileName}`;
     }
 
-    const estimatedChunks = Math.max(1, Math.ceil(extractedText.length / 500));
+    const estimatedChunks = Math.max(1, Math.ceil(extractedText.length / 1750));
     console.log(`[DOC UPLOAD] Storing document. extractedText length: ${extractedText.length} chars (~${estimatedChunks} chunks).`);
+
+    // Quota pre-validation
+    const quota = await getQuotaUsage(userId, projectId);
+    if (quota) {
+      if (quota.pdf.dailyUsed >= quota.pdf.dailyLimit) {
+        return { success: false, error: `Daily PDF upload limit reached (${quota.pdf.dailyLimit}/${quota.pdf.dailyLimit} today). Resets at 00:00 UTC.` };
+      }
+      if (quota.pdf.chunksUsed + estimatedChunks > quota.pdf.chunksLimit) {
+        return { success: false, error: `PDF storage capacity exceeded (${quota.pdf.chunksUsed}/${quota.pdf.chunksLimit} chunks used). Uploading ${estimatedChunks} chunks would exceed the limit. Delete existing PDFs to free up capacity.` };
+      }
+    }
 
     // Insert document into DB with status 'processing' and non-null extractedText
     const [newDoc] = await db.insert(documents).values({
@@ -513,6 +652,9 @@ export async function uploadDocument(userId, projectId, formData) {
     }).returning();
 
     console.log(`[DOC UPLOAD SUCCESS] Saved document ID: ${newDoc.id} with extractedText length ${newDoc.extractedText?.length || 0}. Status set to 'processing'.`);
+
+    // Increment daily PDF uploads counter
+    await incrementDailyUsage(userId, 'pdf');
 
     // Invalidate Redis cache
     await redisDel(`documents:${projectId}`);
@@ -594,7 +736,102 @@ export async function getWebsiteSources(userId, projectId) {
   }
 }
 
-export async function addWebsiteSource(userId, projectId, rawUrl) {
+export async function fetchGithubRepos(username) {
+  if (!username || !username.trim()) {
+    return { success: false, error: "GitHub username is required" };
+  }
+
+  const cleanUser = username.trim().replace(/^@/, '');
+  try {
+    const res = await fetch(`https://api.github.com/users/${encodeURIComponent(cleanUser)}/repos?per_page=100&sort=updated`, {
+      headers: {
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "PortfolioChat-App"
+      },
+      next: { revalidate: 60 }
+    });
+
+    if (res.status === 404) {
+      return { success: false, error: `GitHub user "@${cleanUser}" not found.` };
+    }
+
+    if (!res.ok) {
+      return { success: false, error: `GitHub API error (${res.status}). Please try again.` };
+    }
+
+    const repos = await res.json();
+    if (!Array.isArray(repos)) {
+      return { success: false, error: "Failed to fetch repositories list." };
+    }
+
+    const formattedRepos = repos
+      .map(r => ({
+        id: r.id,
+        name: r.name,
+        fullName: r.full_name,
+        description: r.description || "No description provided.",
+        htmlUrl: r.html_url,
+        stars: r.stargazers_count,
+        language: r.language || "Markdown",
+        defaultBranch: r.default_branch || "main",
+        updatedAt: r.updated_at
+      }));
+
+    return { success: true, username: cleanUser, repos: formattedRepos };
+  } catch (error) {
+    console.error("Error fetching GitHub repos:", error);
+    return { success: false, error: error.message || "Failed to connect to GitHub" };
+  }
+}
+
+export async function fetchGithubReadme(username, repoName, defaultBranch = "main") {
+  if (!username || !repoName) {
+    return { success: false, error: "Missing parameters" };
+  }
+
+  const cleanUser = username.trim().replace(/^@/, '');
+  const cleanRepo = repoName.trim();
+
+  try {
+    // Attempt 1: GitHub API raw readme endpoint
+    const apiRes = await fetch(`https://api.github.com/repos/${encodeURIComponent(cleanUser)}/${encodeURIComponent(cleanRepo)}/readme`, {
+      headers: {
+        "Accept": "application/vnd.github.v3.raw",
+        "User-Agent": "PortfolioChat-App"
+      }
+    });
+
+    if (apiRes.ok) {
+      const readmeContent = await apiRes.text();
+      if (readmeContent && readmeContent.trim()) {
+        return { success: true, content: readmeContent.trim(), repoUrl: `https://github.com/${cleanUser}/${cleanRepo}` };
+      }
+    }
+
+    // Fallback: raw.githubusercontent.com with default branch or main/master
+    const branchesToTry = [defaultBranch, "main", "master"];
+    const filesToTry = ["README.md", "readme.md", "README", "Readme.md"];
+
+    for (const b of branchesToTry) {
+      for (const f of filesToTry) {
+        const rawRes = await fetch(`https://raw.githubusercontent.com/${cleanUser}/${cleanRepo}/${b}/${f}`);
+        if (rawRes.ok) {
+          const content = await rawRes.text();
+          if (content && content.trim()) {
+            return { success: true, content: content.trim(), repoUrl: `https://github.com/${cleanUser}/${cleanRepo}` };
+          }
+        }
+      }
+    }
+
+    return { success: false, error: `No README.md found in repository "${cleanUser}/${cleanRepo}".` };
+  } catch (error) {
+    console.error("Error fetching GitHub README:", error);
+    return { success: false, error: error.message || "Failed to fetch README" };
+  }
+}
+
+export async function addWebsiteSource(userId, projectId, rawUrl, preFetchedTitle = null, preFetchedContent = null) {
   if (!userId || !projectId || !rawUrl) throw new Error("Invalid input");
 
   let targetUrl = rawUrl.trim();
@@ -609,13 +846,36 @@ export async function addWebsiteSource(userId, projectId, rawUrl) {
     );
     if (!project) throw new Error("Unauthorized");
 
+    const estimatedChunks = preFetchedContent 
+      ? Math.max(1, Math.ceil(preFetchedContent.length / 1750)) 
+      : 3;
+
+    // Quota pre-validation
+    const quota = await getQuotaUsage(userId, projectId);
+    if (quota) {
+      if (quota.web.dailyUsed >= quota.web.dailyLimit) {
+        return { success: false, error: `Daily URL import limit reached (${quota.web.dailyLimit}/${quota.web.dailyLimit} today). Resets at 00:00 UTC.` };
+      }
+      if (quota.web.urlsStored >= quota.web.urlsLimit) {
+        return { success: false, error: `Maximum simultaneous URL sources stored (${quota.web.urlsLimit}/${quota.web.urlsLimit}). Delete an existing website or GitHub README source to free up a slot.` };
+      }
+      if (quota.web.chunksUsed + estimatedChunks > quota.web.chunksLimit) {
+        return { success: false, error: `Web content storage capacity exceeded (${quota.web.chunksUsed}/${quota.web.chunksLimit} chunks used). Delete existing web sources to free up capacity.` };
+      }
+    }
+
     // 1. Initial insert into DB with 'processing' status
     const [inserted] = await db.insert(websiteSources).values({
       projectId,
       url: targetUrl,
-      title: targetUrl,
-      status: "processing"
+      title: preFetchedTitle || targetUrl,
+      extractedText: preFetchedContent || null,
+      status: "processing",
+      chunkCount: estimatedChunks
     }).returning();
+
+    // Increment daily URL imports counter
+    await incrementDailyUsage(userId, 'url');
 
     // 2. Invalidate Redis cache
     await redisDel(`website_sources:${projectId}`);

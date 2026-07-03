@@ -1,6 +1,6 @@
 # PortfolioChat (Monorepo)
 
-PortfolioChat is a serverless SaaS platform that allows users to create AI-powered chatbot widgets trained on their personal documents (resumes, portfolios, text files).
+PortfolioChat is a serverless SaaS platform that allows users to create AI-powered chatbot widgets trained on their personal documents (resumes, portfolios, text files, and website URLs).
 
 ---
 
@@ -8,8 +8,8 @@ PortfolioChat is a serverless SaaS platform that allows users to create AI-power
 
 This project is structured as a Turborepo monorepo using **100% pure JavaScript ES Modules**:
 
-- **`apps/dashboard`**: Next.js App Router (Frontend UI, Knowledge Base Management, Profile Settings, PDF parsing via `pdf-parse`, and Better Auth API integration)
-- **`apps/api`**: Fastify server in pure ES Module JavaScript (`node --watch src/index.js`), handling document ingestion webhooks (`/webhooks/ingest`), `@langchain/textsplitters` 512-token semantic chunking, and Cloudflare Worker vector embedding dispatch
+- **`apps/dashboard`**: Next.js App Router (Frontend UI, Modular Knowledge Base, Command Center, Profile Settings, PDF parsing via `pdf-parse`, and Better Auth API integration)
+- **`apps/api`**: Fastify server in pure ES Module JavaScript (`node --watch src/index.js`), handling Headless RAG Chat API (`/v1/chat/message`), document/website ingestion webhooks (`/webhooks/ingest`), `@langchain/textsplitters` 512-token semantic chunking, and Cloudflare Worker vector embedding dispatch
 - **`packages/db`**: Drizzle ORM schema (`schema.js`) + Neon Serverless PostgreSQL connection pool (`index.js`), exported natively as ES Modules
 
 ---
@@ -17,28 +17,91 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 ## Ingestion & Embedding Pipeline
 
 ```
-[1. PDF / Text Entry]  ──► Dashboard Server Action parses text & inserts into Neon DB
-                                  │
-                                  ▼
-[2. Upstash QStash]    ──► Publishes ingestion job asynchronously to QStash Queue
-                                  │
-                                  ▼
-[3. Fastify Webhook]   ──► `apps/api` splits content into 512-token chunks via `@langchain/textsplitters`
-                                  │
-                                  ▼
-[4. Cloudflare Worker] ──► Dispatches `POST ${CLOUDFLARE_WORKER_URL}/embed` per chunk
-                           └─ Generates `@cf/baai/bge-large-en-v1.5` Workers AI embeddings
-                           └─ Inserts vectors into Cloudflare Vectorize DB
-                                  │
-                                  ▼
-[5. Finalized]         ──► Updates document / knowledge entry status to 'ready' in Neon Postgres
-                                  │
-                                  ▼
-[6. Real-Time Cache]   ──► Invalidates Upstash Redis key (`redisDel`); next read serves cached 'ready' data
-                                  │
-                                  ▼
-[7. Deletion Cleanup]  ──► On delete, triggers `POST /delete-vectors` to erase vector chunks from Cloudflare Vectorize
+[1. PDF / Text / Website URL] ──► Dashboard Action inserts 'processing' record into Neon DB
+                                        │
+                                        ▼
+[2. Upstash QStash Queue]     ──► Publishes ingestion job asynchronously to QStash Queue
+                                        │
+                                        ▼
+[3. Fastify Webhook Engine]   ──► `apps/api` fetches text/scrapes URL (with Jina SPA fallback)
+                                  └─ Splits content into 512-token chunks via `@langchain/textsplitters`
+                                        │
+                                        ▼
+[4. Cloudflare Worker]       ──► Dispatches `POST ${CLOUDFLARE_WORKER_URL}/embed` per chunk
+                                  └─ Generates `@cf/baai/bge-large-en-v1.5` Workers AI embeddings
+                                  └─ Inserts vectors into Cloudflare Vectorize DB
+                                        │
+                                        ▼
+[5. Finalized Record]        ──► Updates document / knowledge / website status to 'ready' in Neon DB
+                                        │
+                                        ▼
+[6. Real-Time Status Cache]  ──► Invalidates Upstash Redis key (`redisDel`); next read serves cached 'ready' data
+                                        │
+                                        ▼
+[7. Vector Deletion Cleanup] ──► On delete, triggers `POST /delete-vectors` to erase vector chunks from Cloudflare Vectorize
 ```
+
+---
+
+## Security & Authentication Model
+
+### 1. Zero-Hint SHA-256 API Key Storage
+- **Public Widget Token (`pct_pub_...`)**: Stored in DB as-is for drop-in client-side `<script>` tag embeds.
+- **Secret API Key (`pct_secret_...`)**: Generated in memory using 256 bits of cryptographic randomness (`crypto.randomBytes(24)`). **NEVER stored in the database**.
+- **SHA-256 Database Hash**: The server computes `crypto.createHash('sha256').update(rawSecretKey).digest('hex')` and stores strictly `apiKeyHash` in Neon Postgres.
+- **One-Time Key Display Modal**: Shown once upon creation or key regeneration with a strict warning: *"This won't be shown again. Store it somewhere safe!"*. After closing the modal, secret keys display strictly as masked asterisks (`••••••••••••••••••••••••••••••••`).
+
+### 2. Non-Pastable Confirmation Security Verification
+- **Key Regeneration Confirmation**: Requires manually typing `"I confirm to regenerate the key"` into a non-pastable input box (`onPaste={(e) => e.preventDefault()}`).
+- **Knowledge Base Deletion Confirmation**: Deleting an item requires manually typing the exact `documentId`, `knowledgeId`, or `websiteId` (copy-pasting disabled).
+
+---
+
+## Features & Core Modules
+
+### 1. Modular Knowledge Base (`apps/dashboard/app/dashboard/projects/[projectId]/knowledge/`)
+- **[UploadedFilesTab.js](file:///C:/port_ragbot/apps/dashboard/app/dashboard/projects/%5BprojectId%5D/knowledge/components/UploadedFilesTab.js)**: PDF file drop zone, size limit checks, document status tracking, and read-only parsed text reader modal.
+- **[ManualEntriesTab.js](file:///C:/port_ragbot/apps/dashboard/app/dashboard/projects/%5BprojectId%5D/knowledge/components/ManualEntriesTab.js)**: Structured text entry creation with tags, category filtering (`Work Experience`, `Projects`, `Skills`, `Education`, `Bio`, `Other`), version incrementing, and inline editing modal.
+- **[WebsiteUrlsTab.js](file:///C:/port_ragbot/apps/dashboard/app/dashboard/projects/%5BprojectId%5D/knowledge/components/WebsiteUrlsTab.js)**: Dual-mode source ingestion:
+  - **Website URL Mode**: Portfolio website URL crawling, Chrome browser header fetching, and automatic Jina AI Reader (`r.jina.ai`) fallback for client-rendered React/Vite SPAs.
+  - **GitHub Repositories Mode**: Fetch public repositories by GitHub username, browse repository metadata (stars, primary language, updated date), view scrollable `README.md` content in a modal, and click "Save the Data" to chunk, embed, and vectorize the README.md content into the project's vector database.
+- **Real-Time Polling & Redis Bypass**: Dashboard polls DB status every 1.2s while items are `processing` or `scraping`, bypassing Redis cache until all items reach `ready`.
+
+### 2. Strict Free Tier Quota & Usage Policy (USAGE_RULES.sample.md)
+- **Chunking Specification**: Standardized 2000-character chunk size with 250-character overlap ($\lceil \text{length} / 1750 \rceil$) across both frontend and backend.
+- **PDF Uploads**: 10 PDFs / day reset limit (00:00 UTC), 200 PDF chunks max storage limit.
+- **Knowledge Entries**: 50 Entries / day reset limit (00:00 UTC), 100 Knowledge chunks max storage limit.
+- **Web & GitHub URLs**: 5 URLs / day reset limit (00:00 UTC), 5 simultaneous URLs stored limit, 200 Web chunks max storage limit.
+- **Atomic Operation**: All-or-nothing pre-validation before calling Cloudflare Workers AI or Cloudflare Vectorize DB APIs.
+
+### 3. Headless RAG Chat API (`apps/api/src/routes/chat/index.js`)
+- **API Endpoint**: `POST /v1/chat/message` supporting `Authorization: Bearer <pct_secret_...>` authentication.
+- **Context Search**: Queries Cloudflare Vectorize DB namespace for `projectId` + fallback text retrieval from Neon Postgres (`knowledgeEntries`, `documents`, `websiteSources`).
+- **Structured Markdown AI Answers**: Formatted responses with bullet points, numbered lists, bold highlights, and clean typography without robotic preambles (*"According to my knowledge base..."*).
+
+---
+
+## Database Table Schemas
+
+### `website_sources` (Neon Postgres)
+```sql
+CREATE TABLE website_sources (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id      UUID REFERENCES projects(id) ON DELETE CASCADE,
+  url             TEXT NOT NULL,
+  title           VARCHAR(500),
+  extracted_text  TEXT,
+  status          VARCHAR(50) DEFAULT 'pending',
+  chunk_count     INTEGER DEFAULT 0,
+  error_message   TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_website_sources_project_id ON website_sources(project_id);
+```
+
+*(See [TABLES.md](file:///C:/port_ragbot/TABLES.md) for full project schema documentation).*
 
 ---
 
@@ -49,36 +112,14 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 - **Parsing**: `pdf-parse` for binary PDF text extraction
 - **Styling & Aesthetic**: Modern Tech-Minimalist design system with monochromatic high-contrast UI
 - **Animations**: Framer Motion (Emil Kowalski design engineering principles: fluid `layoutId` tab transitions, spring physics, micro-interactions)
-- **Knowledge Base Management**: Manual text entry & PDF upload fully synchronized with database schema (`category`, `tags`, `content`, `version`, category filtering, read-only parsed PDF text viewer modal, and edit modal with versioning).
 - **Authentication**: Better Auth with Email/Password, Magic Link, Nodemailer SMTP verification, and Google OAuth support
 
 ### Backend (`apps/api`)
 - **API Server**: Fastify (Native JavaScript ES Modules)
 - **Ingestion & Processing**: `@langchain/textsplitters` 512-token semantic chunking
 - **Vector DB & Edge AI**: Cloudflare Worker + Vectorize + Workers AI (`@cf/baai/bge-large-en-v1.5`) via `CLOUDFLARE_WORKER_URL` & `CLOUDFLARE_WORKER_AUTH_TOKEN`
-- **LLM Gateway**: Groq (Llama 3.3 70B / Llama 3.1 70B) / Google Gemini 1.5 Flash
-- **Headless Chat API**: `POST /v1/chat/message` endpoint featuring API Key authentication (`Bearer <pct_key>`), Vector RAG retrieval from Cloudflare Vectorize DB, Groq LLM inference, and multi-turn session logging.
-- **Overview Command Center**: API key management (show/hide toggle, real-time key regeneration with confirmation dialogs), ready-to-run code snippets in Python (`requests`), cURL (JSON), and JavaScript, plus an in-dashboard interactive Live API Tester / Playground.
-- **Queue & Webhooks**: Upstash QStash
-
-### Infrastructure & Single Environment
-- **Database**: Neon Serverless Postgres
-- **Email Service**: Nodemailer (Gmail SMTP / custom SMTP) with asynchronous fire-and-forget dispatch
-- **Single Source Env**: Configured in `.env.local` at the monorepo root (`C:\port_ragbot\.env.local`). Loaded dynamically by both `apps/dashboard` and `apps/api` via `dotenv-cli`.
-
----
-
-## Deployment Strategy
-
-1. **Vercel Deployment (Frontend + Auth)**:
-   - Root Directory: `apps/dashboard`
-   - Framework: Next.js
-   - Handles the Tech-Minimalist UI and Better Auth API routes out of the box as Serverless Functions.
-
-2. **Render Deployment (Backend Processing)**:
-   - Root Directory: `apps/api`
-   - Command: `node src/index.js`
-   - Handles background webhooks, PDF processing, and chunking jobs.
+- **LLM Gateway**: Groq (`llama-3.3-70b-versatile` / `llama-3.1-70b`)
+- **Queue & Webhooks**: Upstash QStash & Redis Cache
 
 ---
 

@@ -50,8 +50,8 @@ export default async function (server) {
 
     try {
       const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 512,
-        chunkOverlap: 64,
+        chunkSize: 2000,
+        chunkOverlap: 250,
         separators: ["\n\n", "\n", ". ", " "],
       });
 
@@ -168,54 +168,56 @@ export default async function (server) {
           throw new Error("Website source record not found");
         }
 
-        let extractedText = "";
-        let title = web.url;
+        let extractedText = web.extractedText || "";
+        let title = web.title || web.url;
 
-        try {
-          const res = await fetch(web.url, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-              "Accept-Language": "en-US,en;q=0.9"
+        if (!extractedText || extractedText.length < 20) {
+          try {
+            const res = await fetch(web.url, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9"
+              }
+            });
+
+            if (res.ok) {
+              const html = await res.text();
+              const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+              if (titleMatch && titleMatch[1]) title = titleMatch[1].trim();
+
+              const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) ||
+                                    html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
+              const metaDesc = metaDescMatch ? metaDescMatch[1] : "";
+
+              const cleaned = html
+                .replace(/<script\b[^<]*>[\s\S]*?<\/script>/gi, "")
+                .replace(/<style\b[^<]*>[\s\S]*?<\/style>/gi, "")
+                .replace(/<svg\b[^<]*>[\s\S]*?<\/svg>/gi, "")
+                .replace(/<[^>]+>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+              extractedText = metaDesc ? `${metaDesc}\n\n${cleaned}` : cleaned;
             }
-          });
 
-          if (res.ok) {
-            const html = await res.text();
-            const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-            if (titleMatch && titleMatch[1]) title = titleMatch[1].trim();
-
-            const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) ||
-                                  html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
-            const metaDesc = metaDescMatch ? metaDescMatch[1] : "";
-
-            const cleaned = html
-              .replace(/<script\b[^<]*>[\s\S]*?<\/script>/gi, "")
-              .replace(/<style\b[^<]*>[\s\S]*?<\/style>/gi, "")
-              .replace(/<svg\b[^<]*>[\s\S]*?<\/svg>/gi, "")
-              .replace(/<[^>]+>/g, " ")
-              .replace(/\s+/g, " ")
-              .trim();
-
-            extractedText = metaDesc ? `${metaDesc}\n\n${cleaned}` : cleaned;
-          }
-
-          if (!extractedText || extractedText.length < 30) {
-            console.log(`[API INGEST] Website ${web.url} sparse HTML. Attempting Jina Reader SPA fallback...`);
-            const jinaRes = await fetch(`https://r.jina.ai/${web.url}`);
-            if (jinaRes.ok) {
-              const jinaText = await jinaRes.text();
-              if (jinaText && jinaText.length > 30) {
-                extractedText = jinaText.trim();
-                const firstLine = jinaText.split('\n')[0];
-                if (firstLine && firstLine.startsWith('Title:')) {
-                  title = firstLine.replace('Title:', '').trim();
+            if (!extractedText || extractedText.length < 30) {
+              console.log(`[API INGEST] Website ${web.url} sparse HTML. Attempting Jina Reader SPA fallback...`);
+              const jinaRes = await fetch(`https://r.jina.ai/${web.url}`);
+              if (jinaRes.ok) {
+                const jinaText = await jinaRes.text();
+                if (jinaText && jinaText.length > 30) {
+                  extractedText = jinaText.trim();
+                  const firstLine = jinaText.split('\n')[0];
+                  if (firstLine && firstLine.startsWith('Title:')) {
+                    title = firstLine.replace('Title:', '').trim();
+                  }
                 }
               }
             }
+          } catch (scrapeErr) {
+            console.error(`[API INGEST SCRAPE ERROR] ${scrapeErr.message}`);
           }
-        } catch (scrapeErr) {
-          console.error(`[API INGEST SCRAPE ERROR] ${scrapeErr.message}`);
         }
 
         if (!extractedText || extractedText.length < 20) {
