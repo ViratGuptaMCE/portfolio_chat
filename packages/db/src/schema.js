@@ -66,6 +66,7 @@ export const projects = pgTable('projects', {
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   widgetToken: varchar('widget_token', { length: 128 }).notNull().unique(),
+  apiKeyHash: varchar('api_key_hash', { length: 128 }),
   embeddingModel: varchar('embedding_model', { length: 100 }).default('bge-large-en-v1.5'),
   llmModel: varchar('llm_model', { length: 100 }).default('groq/llama-3.1-70b'),
   widgetEnabled: boolean('widget_enabled').default(true),
@@ -77,6 +78,7 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 }, (t) => ({
   idx_projects_widget_token: index('idx_projects_widget_token').on(t.widgetToken),
+  idx_projects_api_key_hash: index('idx_projects_api_key_hash').on(t.apiKeyHash),
   idx_projects_user_id: index('idx_projects_user_id').on(t.userId)
 }));
 
@@ -112,6 +114,22 @@ export const knowledgeEntries = pgTable('knowledge_entries', {
 }, (t) => ({
   idx_knowledge_entries_project: index('idx_knowledge_entries_project').on(t.projectId),
   idx_knowledge_entries_category: index('idx_knowledge_entries_category').on(t.projectId, t.category)
+}));
+
+export const websiteSources = pgTable('website_sources', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  url: text('url').notNull(),
+  title: varchar('title', { length: 500 }),
+  extractedText: text('extracted_text'),
+  status: varchar('status', { length: 50 }).default('pending'),
+  chunkCount: integer('chunk_count').default(0),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (t) => ({
+  idx_website_sources_project_id: index('idx_website_sources_project_id').on(t.projectId),
+  idx_website_sources_status: index('idx_website_sources_status').on(t.projectId, t.status)
 }));
 
 export const userApiKeys = pgTable('user_api_keys', {

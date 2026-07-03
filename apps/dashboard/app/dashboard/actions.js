@@ -1,7 +1,8 @@
 "use server";
 
 import pdfParse from "pdf-parse";
-import { db, projects, knowledgeEntries, documents, redisGet, redisSet, redisDel } from "@portfoliochat/db";
+import crypto from "crypto";
+import { db, projects, knowledgeEntries, documents, websiteSources, redisGet, redisSet, redisDel } from "@portfoliochat/db";
 import { eq, and } from "drizzle-orm";
 
 export async function getUserProjects(userId) {
@@ -29,19 +30,22 @@ export async function createProject(userId, name) {
   if (!userId || !name) throw new Error("Invalid input");
   
   try {
-    // Generate a unique slug and a secure widget token
+    // Generate a unique slug, widget token, and secret API key
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
-    const widgetToken = 'pct_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const widgetToken = 'pct_pub_' + crypto.randomBytes(16).toString('hex');
+    const rawApiKey = 'pct_secret_' + crypto.randomBytes(24).toString('hex');
+    const apiKeyHash = crypto.createHash('sha256').update(rawApiKey).digest('hex');
     
     const [newProject] = await db.insert(projects).values({
       userId,
       name,
       slug,
       widgetToken,
+      apiKeyHash,
       status: 'ready'
     }).returning();
     
-    return { success: true, project: newProject };
+    return { success: true, project: newProject, rawApiKey };
   } catch (error) {
     console.error("Error creating project:", error);
     return { success: false, error: "Failed to create project" };
@@ -59,7 +63,22 @@ export async function getProjectById(userId, projectId) {
       )
     );
 
-    return project || null;
+    if (!project) return null;
+
+    // Backward compatibility auto-migration for existing projects missing an apiKeyHash
+    if (!project.apiKeyHash) {
+      const rawApiKey = 'pct_secret_' + crypto.randomBytes(24).toString('hex');
+      const apiKeyHash = crypto.createHash('sha256').update(rawApiKey).digest('hex');
+
+      await db.update(projects)
+        .set({ apiKeyHash, updatedAt: new Date() })
+        .where(eq(projects.id, projectId));
+
+      project.apiKeyHash = apiKeyHash;
+      project.initialRawApiKey = rawApiKey;
+    }
+
+    return project;
   } catch (error) {
     console.error("Error fetching project:", error);
     return null;
@@ -536,5 +555,104 @@ export async function deleteDocument(userId, projectId, documentId) {
   } catch (e) {
     console.error("Error deleting document:", e);
     return { success: false };
+  }
+}
+
+export async function regenerateProjectApiKey(userId, projectId) {
+  if (!userId || !projectId) throw new Error("Invalid input");
+
+  try {
+    const rawApiKey = 'pct_secret_' + crypto.randomBytes(24).toString('hex');
+    const apiKeyHash = crypto.createHash('sha256').update(rawApiKey).digest('hex');
+
+    await db.update(projects)
+      .set({ apiKeyHash, updatedAt: new Date() })
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
+
+    return { success: true, rawApiKey };
+  } catch (error) {
+    console.error("Error regenerating API key:", error);
+    return { success: false, error: "Failed to regenerate API key" };
+  }
+}
+
+export async function getWebsiteSources(userId, projectId) {
+  if (!userId || !projectId) throw new Error("Invalid input");
+  try {
+    const cached = await redisGet(`website_sources:${projectId}`);
+    if (cached) return cached;
+
+    const data = await db.select().from(websiteSources).where(eq(websiteSources.projectId, projectId));
+    const hasProcessing = data.some(item => item.status === 'processing' || item.status === 'pending' || item.status === 'scraping');
+    if (data && !hasProcessing) {
+      await redisSet(`website_sources:${projectId}`, data, 3600);
+    }
+    return data;
+  } catch (error) {
+    console.error("Error fetching website sources:", error);
+    return [];
+  }
+}
+
+export async function addWebsiteSource(userId, projectId, rawUrl) {
+  if (!userId || !projectId || !rawUrl) throw new Error("Invalid input");
+
+  let targetUrl = rawUrl.trim();
+  if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+    targetUrl = "https://" + targetUrl;
+  }
+
+  try {
+    // Verify project ownership
+    const [project] = await db.select().from(projects).where(
+      and(eq(projects.id, projectId), eq(projects.userId, userId))
+    );
+    if (!project) throw new Error("Unauthorized");
+
+    // 1. Initial insert into DB with 'processing' status
+    const [inserted] = await db.insert(websiteSources).values({
+      projectId,
+      url: targetUrl,
+      title: targetUrl,
+      status: "processing"
+    }).returning();
+
+    // 2. Invalidate Redis cache
+    await redisDel(`website_sources:${projectId}`);
+
+    // 3. Trigger asynchronous ingestion queue (QStash or Webhook API)
+    triggerIngestionWebhook({ websiteId: inserted.id, projectId });
+
+    return { success: true, item: inserted };
+  } catch (error) {
+    console.error("Error adding website source:", error);
+    return { success: false, error: error.message || "Failed to process website URL" };
+  }
+}
+
+export async function deleteWebsiteSource(userId, projectId, websiteId) {
+  if (!userId || !projectId || !websiteId) throw new Error("Invalid input");
+
+  try {
+    // Fetch target website record to retrieve chunk count for vector deletion
+    const [existing] = await db.select().from(websiteSources).where(
+      and(eq(websiteSources.id, websiteId), eq(websiteSources.projectId, projectId))
+    );
+
+    if (existing && existing.chunkCount && existing.chunkCount > 0) {
+      triggerVectorDeletionWebhook({ documentId: websiteId, chunkCount: existing.chunkCount, projectId });
+    }
+
+    await db.delete(websiteSources).where(
+      and(
+        eq(websiteSources.id, websiteId),
+        eq(websiteSources.projectId, projectId)
+      )
+    );
+    await redisDel(`website_sources:${projectId}`);
+    return { success: true };
+  } catch (e) {
+    console.error("Error deleting website source:", e);
+    return { success: false, error: "Failed to delete website source" };
   }
 }

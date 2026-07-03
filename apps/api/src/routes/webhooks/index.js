@@ -1,5 +1,5 @@
 import { Receiver } from '@upstash/qstash';
-import { db, documents, knowledgeEntries, eq, redisDel } from '@portfoliochat/db';
+import { db, documents, knowledgeEntries, websiteSources, eq, redisDel } from '@portfoliochat/db';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
 const receiver = new Receiver({
@@ -37,12 +37,12 @@ async function verifyQStashSignature(request, reply) {
 export default async function (server) {
   // Ingest Webhook - Triggered by Next.js or via QStash
   server.post('/ingest', { preHandler: verifyQStashSignature }, async (request, reply) => {
-    const { documentId, entryId, projectId } = request.body || {};
-    console.log(`[API INGEST START] Ingestion requested: documentId=${documentId}, entryId=${entryId}, projectId=${projectId}`);
+    const { documentId, entryId, websiteId, projectId } = request.body || {};
+    console.log(`[API INGEST START] Ingestion requested: documentId=${documentId}, entryId=${entryId}, websiteId=${websiteId}, projectId=${projectId}`);
     
-    if ((!documentId && !entryId) || !projectId) {
-      console.error("[API INGEST ERROR] Missing documentId/entryId or projectId.");
-      return reply.status(400).send({ error: 'Missing documentId/entryId or projectId' });
+    if ((!documentId && !entryId && !websiteId) || !projectId) {
+      console.error("[API INGEST ERROR] Missing documentId/entryId/websiteId or projectId.");
+      return reply.status(400).send({ error: 'Missing documentId/entryId/websiteId or projectId' });
     }
 
     const cfWorkerUrl = process.env.CLOUDFLARE_WORKER_URL || process.env.CF_WORKER_URL;
@@ -158,6 +158,109 @@ export default async function (server) {
         return { success: true, type: 'document', id: documentId, chunks: chunks.length };
       }
 
+      // --- Case 3: Website Source Ingestion ---
+      if (websiteId) {
+        const web = await db.query.websiteSources.findFirst({
+          where: eq(websiteSources.id, websiteId)
+        });
+
+        if (!web || !web.url) {
+          throw new Error("Website source record not found");
+        }
+
+        let extractedText = "";
+        let title = web.url;
+
+        try {
+          const res = await fetch(web.url, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+              "Accept-Language": "en-US,en;q=0.9"
+            }
+          });
+
+          if (res.ok) {
+            const html = await res.text();
+            const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+            if (titleMatch && titleMatch[1]) title = titleMatch[1].trim();
+
+            const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) ||
+                                  html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
+            const metaDesc = metaDescMatch ? metaDescMatch[1] : "";
+
+            const cleaned = html
+              .replace(/<script\b[^<]*>[\s\S]*?<\/script>/gi, "")
+              .replace(/<style\b[^<]*>[\s\S]*?<\/style>/gi, "")
+              .replace(/<svg\b[^<]*>[\s\S]*?<\/svg>/gi, "")
+              .replace(/<[^>]+>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+
+            extractedText = metaDesc ? `${metaDesc}\n\n${cleaned}` : cleaned;
+          }
+
+          if (!extractedText || extractedText.length < 30) {
+            console.log(`[API INGEST] Website ${web.url} sparse HTML. Attempting Jina Reader SPA fallback...`);
+            const jinaRes = await fetch(`https://r.jina.ai/${web.url}`);
+            if (jinaRes.ok) {
+              const jinaText = await jinaRes.text();
+              if (jinaText && jinaText.length > 30) {
+                extractedText = jinaText.trim();
+                const firstLine = jinaText.split('\n')[0];
+                if (firstLine && firstLine.startsWith('Title:')) {
+                  title = firstLine.replace('Title:', '').trim();
+                }
+              }
+            }
+          }
+        } catch (scrapeErr) {
+          console.error(`[API INGEST SCRAPE ERROR] ${scrapeErr.message}`);
+        }
+
+        if (!extractedText || extractedText.length < 20) {
+          throw new Error("Could not extract readable content from website");
+        }
+
+        const formattedText = `[Website Source: ${web.url} (${title})]\n\n${extractedText}`;
+        const chunks = await splitter.createDocuments([formattedText]);
+        const chunkTexts = chunks.map(c => c.pageContent);
+
+        console.log(`[API INGEST] Website "${title}" split into ${chunks.length} chunks.`);
+
+        if (cfWorkerUrl && cfToken) {
+          for (let i = 0; i < chunkTexts.length; i++) {
+            const res = await fetch(`${cfWorkerUrl}/embed`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${cfToken}`
+              },
+              body: JSON.stringify({
+                text: chunkTexts[i],
+                documentId: websiteId,
+                projectId,
+                category: 'website',
+                tags: ['url'],
+                chunkIndex: i
+              })
+            });
+            if (!res.ok) {
+              console.error(`[API INGEST ERROR] Website chunk embedding failed: ${await res.text()}`);
+            }
+          }
+        }
+
+        await db.update(websiteSources)
+          .set({ title, extractedText, status: 'ready', chunkCount: chunks.length, updatedAt: new Date() })
+          .where(eq(websiteSources.id, websiteId));
+
+        await redisDel(`website_sources:${projectId}`);
+
+        console.log(`[API INGEST COMPLETE] Website ${websiteId} status set to 'ready'. Redis cache invalidated.`);
+        return { success: true, type: 'website', id: websiteId, chunks: chunks.length };
+      }
+
     } catch (error) {
       console.error("[API INGEST FAILED]", error);
       
@@ -173,6 +276,13 @@ export default async function (server) {
           .set({ status: 'failed', updatedAt: new Date() })
           .where(eq(knowledgeEntries.id, entryId));
         await redisDel(`knowledge:${projectId}`);
+      }
+
+      if (websiteId) {
+        await db.update(websiteSources)
+          .set({ status: 'failed', errorMessage: error.message, updatedAt: new Date() })
+          .where(eq(websiteSources.id, websiteId));
+        await redisDel(`website_sources:${projectId}`);
       }
 
       return reply.status(500).send({ error: error.message });

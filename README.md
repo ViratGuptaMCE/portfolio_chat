@@ -56,7 +56,9 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 - **API Server**: Fastify (Native JavaScript ES Modules)
 - **Ingestion & Processing**: `@langchain/textsplitters` 512-token semantic chunking
 - **Vector DB & Edge AI**: Cloudflare Worker + Vectorize + Workers AI (`@cf/baai/bge-large-en-v1.5`) via `CLOUDFLARE_WORKER_URL` & `CLOUDFLARE_WORKER_AUTH_TOKEN`
-- **LLM Gateway**: Groq (Llama 3.1 70B) / Google Gemini 1.5 Flash
+- **LLM Gateway**: Groq (Llama 3.3 70B / Llama 3.1 70B) / Google Gemini 1.5 Flash
+- **Headless Chat API**: `POST /v1/chat/message` endpoint featuring API Key authentication (`Bearer <pct_key>`), Vector RAG retrieval from Cloudflare Vectorize DB, Groq LLM inference, and multi-turn session logging.
+- **Overview Command Center**: API key management (show/hide toggle, real-time key regeneration with confirmation dialogs), ready-to-run code snippets in Python (`requests`), cURL (JSON), and JavaScript, plus an in-dashboard interactive Live API Tester / Playground.
 - **Queue & Webhooks**: Upstash QStash
 
 ### Infrastructure & Single Environment

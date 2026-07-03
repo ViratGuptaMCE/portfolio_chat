@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import webhookRoutes from './routes/webhooks/index.js';
 import internalRoutes from './routes/internal/index.js';
+import chatRoutes from './routes/chat/index.js';
 
 // Load environment variables from the root .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
@@ -12,13 +13,16 @@ const server = fastify({ logger: true });
 
 // Register Plugins
 server.register(cors, {
-  origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  origin: true,
   credentials: true,
 });
 
 // Register routes
 server.register(webhookRoutes, { prefix: '/webhooks' });
 server.register(internalRoutes, { prefix: '/internal' });
+server.register(chatRoutes, { prefix: '/v1/chat' });
+server.register(chatRoutes, { prefix: '/api/v1/chat' });
+server.register(chatRoutes, { prefix: '/api/chat' });
 
 // Health check
 server.get('/health', async (request, reply) => {
