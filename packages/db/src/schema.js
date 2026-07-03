@@ -149,6 +149,8 @@ export const widgetConfigs = pgTable('widget_configs', {
   templateId: varchar('template_id', { length: 100 }).default('minimal'),
   position: varchar('position', { length: 20 }).default('bottom-right'),
   theme: jsonb('theme').default({}),
+  draftConfig: jsonb('draft_config').default({}),
+  publishedConfig: jsonb('published_config').default({}),
   welcomeMessage: text('welcome_message').default('Hi! Ask me anything about my work.'),
   placeholderText: text('placeholder_text').default('Ask me anything...'),
   botName: varchar('bot_name', { length: 100 }).default('AI Assistant'),

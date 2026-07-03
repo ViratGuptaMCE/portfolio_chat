@@ -74,7 +74,13 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 - **Web & GitHub URLs**: 5 URLs / day reset limit (00:00 UTC), 5 simultaneous URLs stored limit, 200 Web chunks max storage limit.
 - **Atomic Operation**: All-or-nothing pre-validation before calling Cloudflare Workers AI or Cloudflare Vectorize DB APIs.
 
-### 3. Headless RAG Chat API (`apps/api/src/routes/chat/index.js`)
+### 3. Chronological Conversation History Module (`apps/dashboard/app/dashboard/projects/[projectId]/conversations/`)
+- **Date-Based Chronological Grouping**: Multi-turn sessions automatically grouped into clean date buckets (`Today`, `Yesterday`, `Earlier This Week`, or exact calendar dates).
+- **Multi-Filter & Search Engine**: Real-time search across visitor questions + filters for date ranges (`All Dates`, `Today Only`, `Last 7 Days`, `Last 30 Days`) and sources (`Widget`, `Headless API`).
+- **Interactive Transcript Modal ([ConversationDetailModal.js](file:///C:/port_ragbot/apps/dashboard/app/dashboard/projects/%5BprojectId%5D/conversations/components/ConversationDetailModal.js))**: Full chat transcript viewer with message bubbles, latency timing, expandable **Retrieved Context Sources** panel (vector chunks & similarity scores), flag toggles, and JSON/copy export actions.
+- **Non-Pastable Deletion Guard**: Manual session ID typing verification to prevent accidental conversation log deletion.
+
+### 4. Headless RAG Chat API (`apps/api/src/routes/chat/index.js`)
 - **API Endpoint**: `POST /v1/chat/message` supporting `Authorization: Bearer <pct_secret_...>` authentication.
 - **Context Search**: Queries Cloudflare Vectorize DB namespace for `projectId` + fallback text retrieval from Neon Postgres (`knowledgeEntries`, `documents`, `websiteSources`).
 - **Structured Markdown AI Answers**: Formatted responses with bullet points, numbered lists, bold highlights, and clean typography without robotic preambles (*"According to my knowledge base..."*).

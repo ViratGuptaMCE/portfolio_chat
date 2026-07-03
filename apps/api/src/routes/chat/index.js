@@ -2,12 +2,10 @@ import { db, projects, knowledgeEntries, documents, websiteSources, chatSessions
 import crypto from 'crypto';
 
 export default async function (server) {
-  // POST /v1/chat/message or POST /api/chat
   server.post('/message', async (request, reply) => {
     const authHeader = request.headers['authorization'];
     const customTokenHeader = request.headers['x-portfolio-token'] || request.headers['x-api-key'];
     
-    // Extract token from Authorization header (Bearer pct_...) or custom headers or body
     let token = customTokenHeader;
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7).trim();
@@ -95,13 +93,17 @@ export default async function (server) {
             const searchData = await searchRes.json();
             if (searchData.results && Array.isArray(searchData.results)) {
               retrievedChunks = searchData.results
-                .filter(r => r.text)
-                .map(r => ({
-                  text: r.text,
-                  score: r.score,
-                  category: r.category || 'general',
-                  tags: r.tags || ''
-                }));
+                .map(r => {
+                  const meta = r.metadata || {};
+                  return {
+                    text: r.text || meta.text || "",
+                    score: r.score,
+                    category: r.category || meta.category || 'general',
+                    tags: r.tags || meta.tags || '',
+                    source: meta.title || meta.documentId || r.documentId || 'Knowledge Base'
+                  };
+                })
+                .filter(c => c.text);
             }
           }
         } catch (searchErr) {
@@ -133,7 +135,8 @@ export default async function (server) {
               text: `[Category: ${e.category || 'other'}]\nTitle: ${e.title}\n${e.content}`,
               score: 0.85,
               category: e.category,
-              tags: (e.tags || []).join(', ')
+              tags: (e.tags || []).join(', '),
+              source: e.title
             });
           }
         }
@@ -143,7 +146,8 @@ export default async function (server) {
               text: `[Document: ${d.fileName}]\n${d.extractedText.substring(0, 800)}`,
               score: 0.8,
               category: 'document',
-              tags: d.fileType
+              tags: d.fileType,
+              source: d.fileName
             });
           }
         }
@@ -153,7 +157,8 @@ export default async function (server) {
               text: `[Website Source: ${w.url} (${w.title || 'Page'})]\n${w.extractedText.substring(0, 800)}`,
               score: 0.8,
               category: 'website',
-              tags: 'url'
+              tags: 'url',
+              source: w.title || w.url
             });
           }
         }
@@ -247,7 +252,12 @@ ${contextBlock}
             projectId: activeProjectId,
             role: 'assistant',
             content: aiResponseText,
-            sources: retrievedChunks.map(c => ({ category: c.category, score: c.score })),
+            sources: retrievedChunks.map(c => ({
+              text: c.text,
+              score: c.score,
+              category: c.category,
+              source: c.source || c.category || 'Knowledge Base'
+            })),
             createdAt: new Date()
           });
         } catch (logErr) {
@@ -265,6 +275,7 @@ ${contextBlock}
         sources: retrievedChunks.map(c => ({
           score: c.score,
           category: c.category,
+          source: c.source || c.category || 'Knowledge Base',
           snippet: c.text.substring(0, 150) + '...'
         })),
         usage: {
