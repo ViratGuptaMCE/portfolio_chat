@@ -108,3 +108,32 @@ md-filled-button:active, md-text-button:active, md-elevated-button:active, md-ou
 .popover {
   transform-origin: var(--transform-origin);
 }
+
+/* Thin, Theme-Adaptive Custom Scrollbars (Width: 3px / Height: 3px) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 1px;
+  height: 1px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(160, 160, 160, 0.25);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 160, 160, 0.45);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 160, 160, 0.25) transparent;
+}
+
+/* No scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

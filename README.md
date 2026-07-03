@@ -80,7 +80,14 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 - **Interactive Transcript Modal ([ConversationDetailModal.js](file:///C:/port_ragbot/apps/dashboard/app/dashboard/projects/%5BprojectId%5D/conversations/components/ConversationDetailModal.js))**: Full chat transcript viewer with message bubbles, latency timing, expandable **Retrieved Context Sources** panel (vector chunks & similarity scores), flag toggles, and JSON/copy export actions.
 - **Non-Pastable Deletion Guard**: Manual session ID typing verification to prevent accidental conversation log deletion.
 
-### 4. Headless RAG Chat API (`apps/api/src/routes/chat/index.js`)
+### 4. Chatbot Customizer Studio Module (`apps/dashboard/app/dashboard/projects/[projectId]/customizer/`)
+- **Split-Screen Studio Architecture**: Left-side 13-category settings studio panel + right-side real-time interactive widget preview canvas.
+- **Draft vs. Published State Machine**: Experiment freely in **Draft Mode** (`draft_config`) without affecting embedded live widgets until **Publish to Live** is clicked.
+- **6 One-Click Theme Presets**: *Minimal Dark*, *Clean Corporate*, *Frosted Glass*, *Cyber Neon*, *Playful Rounded*, and *Modern Slate*.
+- **13 Deep Customization Panels**: Appearance, Widget Launcher, Header, Welcome Experience, Layout & Bubbles, AI Personality (temperature slider & tone presets), Prompt Chips editor (max 6 chips), and Developer Embed & CSS settings.
+- **Export & Import**: Download configuration as JSON backup or import JSON to clone branding across projects.
+
+### 5. Headless RAG Chat API (`apps/api/src/routes/chat/index.js`)
 - **API Endpoint**: `POST /v1/chat/message` supporting `Authorization: Bearer <pct_secret_...>` authentication.
 - **Context Search**: Queries Cloudflare Vectorize DB namespace for `projectId` + fallback text retrieval from Neon Postgres (`knowledgeEntries`, `documents`, `websiteSources`).
 - **Structured Markdown AI Answers**: Formatted responses with bullet points, numbered lists, bold highlights, and clean typography without robotic preambles (*"According to my knowledge base..."*).
