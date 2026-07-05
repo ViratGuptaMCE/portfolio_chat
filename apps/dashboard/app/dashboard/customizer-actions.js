@@ -1,13 +1,50 @@
 "use server";
 
-import { db, projects, widgetConfigs, eq, and } from "@portfoliochat/db";
-import { redisDel } from "@portfoliochat/db";
+import { db, projects, widgetConfigs, eq, and, redisGet, redisSet, redisDel } from "@portfoliochat/db";
 import { DEFAULT_WIDGET_CONFIG } from "./customizer-constants";
+
+async function triggerQStashEvent(destination, payload) {
+  const apiUrl = process.env.API_URL || "http://localhost:8080";
+  const qstashToken = process.env.QSTASH_TOKEN;
+  const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
+  const isLocalTarget = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
+
+  if (qstashToken && !isLocalTarget) {
+    const destinationUrl = `${apiUrl}${destination}`;
+    const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
+    const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
+
+    console.log(`[QSTASH QUEUE] Publishing customizer event to ${publishUrl}...`);
+    try {
+      await fetch(publishUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${qstashToken}`,
+          "Content-Type": "application/json",
+          "Upstash-Retries": "3"
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.error(`[QSTASH QUEUE ERROR]`, err.message);
+    }
+  }
+
+  fetch(`${apiUrl}${destination}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
 
 export async function getWidgetConfig(userId, projectId) {
   if (!userId || !projectId) return null;
+  const cacheKey = `widget_config:${projectId}`;
 
   try {
+    const cached = await redisGet(cacheKey);
+    if (cached) return cached;
+
     const [project] = await db.select().from(projects).where(
       and(eq(projects.id, projectId), eq(projects.userId, userId))
     );
@@ -36,13 +73,16 @@ export async function getWidgetConfig(userId, projectId) {
       ? { ...DEFAULT_WIDGET_CONFIG, ...configRow.publishedConfig }
       : DEFAULT_WIDGET_CONFIG;
 
-    return {
+    const result = {
       id: configRow.id,
       projectId: configRow.projectId,
       draft,
       published,
       updatedAt: configRow.updatedAt ? new Date(configRow.updatedAt).toISOString() : new Date().toISOString()
     };
+
+    await redisSet(cacheKey, result, 3600); // 1 hr TTL
+    return result;
   } catch (error) {
     console.error("Error in getWidgetConfig:", error);
     return null;
@@ -75,6 +115,8 @@ export async function saveDraftConfig(userId, projectId, draftConfig) {
         updatedAt: new Date()
       })
       .where(eq(widgetConfigs.projectId, projectId));
+
+    await redisDel(`widget_config:${projectId}`);
 
     return { success: true };
   } catch (error) {
@@ -113,6 +155,13 @@ export async function publishWidgetConfig(userId, projectId, draftConfig) {
 
     // Invalidate Redis cache for live embedded widgets
     await redisDel(`widget_config:${projectId}`);
+
+    // Queue QStash Event for Widget Release Publishing
+    triggerQStashEvent("/webhooks/widget-published", {
+      type: "widget_published",
+      projectId,
+      publishedAt: new Date().toISOString()
+    });
 
     return { success: true };
   } catch (error) {

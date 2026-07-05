@@ -1,4 +1,4 @@
-import { db, projects, knowledgeEntries, documents, websiteSources, chatSessions, conversationMessages, eq, and, or } from '@portfoliochat/db';
+import { db, projects, projectSettings, knowledgeEntries, documents, websiteSources, chatSessions, conversationMessages, eq, and, or, redisGet, redisSet } from '@portfoliochat/db';
 import crypto from 'crypto';
 
 export default async function (server) {
@@ -66,6 +66,92 @@ export default async function (server) {
 
       const activeProjectId = project.id;
       const sessionId = incomingSessionId || `session_${crypto.randomBytes(8).toString('hex')}`;
+
+      // Fetch model & project settings from project_settings table
+      const settings = await db.query.projectSettings.findFirst({
+        where: eq(projectSettings.projectId, activeProjectId)
+      }).catch(() => null);
+
+      const isWidgetReq = finalApiKey && finalApiKey === project.widgetToken;
+      const isSecretKeyReq = finalApiKey && finalApiKey.startsWith('pct_secret_');
+
+      if (settings) {
+        // 1. Master Toggle Checks
+        if (isSecretKeyReq && settings.apiEnabled === false) {
+          return reply.status(403).send({
+            success: false,
+            error: 'Forbidden: Headless API access is disabled for this project in Project Settings.'
+          });
+        }
+
+        if (isWidgetReq && settings.widgetEnabled === false) {
+          return reply.status(403).send({
+            success: false,
+            error: 'Forbidden: Widget embedding is disabled for this project in Project Settings.'
+          });
+        }
+
+        // 2. Origin & Domain Verification
+        const originHeader = request.headers['origin'] || request.headers['referer'] || '';
+        if (originHeader) {
+          try {
+            const reqHost = new URL(originHeader).hostname;
+
+            // CORS API Allowed Origins Check
+            if (isSecretKeyReq && settings.apiAllowedOrigins && settings.apiAllowedOrigins.length > 0) {
+              const allowedHosts = settings.apiAllowedOrigins.map((o) => {
+                try { return new URL(o).hostname; } catch (e) { return o.replace(/^https?:\/\//, '').split('/')[0]; }
+              });
+              if (!allowedHosts.includes(reqHost)) {
+                return reply.status(403).send({
+                  success: false,
+                  error: `Forbidden: API request origin '${reqHost}' is not in the allowed CORS origins list.`
+                });
+              }
+            }
+
+            // Widget Allowed Domains Check
+            if (isWidgetReq && settings.allowedDomains && settings.allowedDomains.length > 0) {
+              const allowedDomainsList = settings.allowedDomains.map((d) => {
+                try { return new URL(d).hostname; } catch (e) { return d.replace(/^https?:\/\//, '').split('/')[0]; }
+              });
+              if (!allowedDomainsList.includes(reqHost)) {
+                return reply.status(403).send({
+                  success: false,
+                  error: `Forbidden: Widget embedding is not permitted on domain '${reqHost}'.`
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('[CHAT API ORIGIN WARN]', e.message);
+          }
+        }
+
+        // 3. API Rate Limiting (RPM) via Upstash Redis Sliding Window
+        const maxRpm = settings.apiRateLimitRpm || project.apiRateLimitRpm || 20;
+        const currentMinute = Math.floor(Date.now() / 60000);
+        const rateKey = `ratelimit:${activeProjectId}:${currentMinute}`;
+
+        try {
+          const currentCount = (await redisGet(rateKey)) || 0;
+          if (parseInt(currentCount, 10) >= maxRpm) {
+            return reply.status(429).send({
+              success: false,
+              error: `Too Many Requests: Rate limit of ${maxRpm} requests per minute exceeded for this project.`
+            });
+          }
+          await redisSet(rateKey, parseInt(currentCount, 10) + 1, 60);
+        } catch (redisErr) {
+          console.warn('[RATE LIMIT REDIS WARN]', redisErr.message);
+        }
+      }
+
+      const activeModel = settings?.llmModel || project.llmModel || 'openai/gpt-oss-120b';
+      const activeTemperature = settings?.temperature ? parseFloat(settings.temperature) : 0.3;
+      const activeMaxTokens = settings?.maxTokens || 500;
+      const activeTone = settings?.modelTone || 'professional';
+      const activeLanguage = settings?.modelLanguage || 'auto';
+      const customDirectives = settings?.systemInstructions || '';
 
       // 2. Vector Search / Knowledge Retrieval
       const cfWorkerUrl = process.env.CLOUDFLARE_WORKER_URL || process.env.CF_WORKER_URL;
@@ -164,48 +250,57 @@ export default async function (server) {
         }
       }
 
-      // 3. Build System & User Context Prompt
+      // 3. Build System & User Context Prompt (Cleaned of raw DB headers)
       const contextBlock = retrievedChunks.length > 0
-        ? retrievedChunks.map((c, idx) => `[Snippet ${idx + 1}]\n${c.text}`).join('\n\n---\n\n')
+        ? retrievedChunks.map((c, idx) => {
+            const sanitizedText = c.text
+              .replace(/^\[Category: [^\]]+\]\s*/i, '')
+              .replace(/^Title:\s*[^\n]+\s*/i, '')
+              .replace(/^Tags:\s*[^\n]+\s*/i, '')
+              .trim();
+            return `Knowledge Fact ${idx + 1}:\n${sanitizedText || c.text}`;
+          }).join('\n\n')
         : "No specific knowledge base content found for this query.";
 
-      const systemPrompt = `You are the personal AI assistant for ${project.name}'s portfolio. Your goal is to represent ${project.name} professionally, warmly, and accurately.
+      const systemPrompt = `You are the personal AI assistant for ${project.name}'s portfolio. Your goal is to represent ${project.name} accurately, naturally, and conversationally in a ${activeTone} tone.
 
-Formatting & Tone Guidelines:
-1. **Direct & Natural Tone**: NEVER use robotic preambles like "According to my knowledge base", "Based on the provided context", or "In the documents provided". Answer directly as an authentic portfolio representative.
-2. **Clean Markdown Formatting**: Use structured Markdown formatting:
-   - Use bolding (**Name / Title / Skill**) for key institutions, project names, companies, and skills.
-   - Use clean bulleted lists (- ) or numbered steps (1. ) for multiple items.
-   - Separate thoughts into short, readable paragraphs with clear line spacing.
-3. **Factual Accuracy**: Answer based strictly on the knowledge base facts provided below. If something is not in the knowledge base, state politely that the information isn't available.
+CRITICAL RESPONSE GUIDELINES:
+1. **Natural Conversational Synthesis**: Answer the user's question directly and conversationally using the knowledge base facts provided below.
+2. **NO Meta-Preambles or DB Dumps**: NEVER start your response with "Based on the knowledge base", "According to snippet X", "Category:", "Title:", or raw key-value headers. Respond as an authentic, human-like AI portfolio assistant.
+3. **Tone & Language**: Maintain a ${activeTone} tone throughout.${activeLanguage !== 'auto' ? ` Respond strictly in ${activeLanguage}.` : ''}
+4. **Formatting**: Use clean, elegant Markdown formatting with bold text and bullet points where appropriate.
+5. **Accuracy**: Stick strictly to true information contained in the Knowledge Base facts.
 
---- KNOWLEDGE BASE CONTEXT ---
-${contextBlock}
---- END CONTEXT ---`;
+${customDirectives ? `CUSTOM INSTRUCTIONS:\n${customDirectives}\n` : ''}
+KNOWLEDGE BASE FACTS:
+${contextBlock}`;
 
-      // 4. LLM Generation Call (Groq API or Fallback)
+      // 4. LLM Generation Call (Groq API using active model directly)
       let aiResponseText = "";
       const groqApiKey = process.env.GROQ_API_KEY;
 
       if (groqApiKey) {
         try {
-          console.log(`[CHAT API] Calling Groq API with llama-3.3-70b-versatile...`);
-          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${groqApiKey}`
+          console.log(`[CHAT API] Calling Groq API with configured model '${activeModel}'...`);
+          const groqRes = await fetch(
+            "https://api.groq.com/openai/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${groqApiKey}`,
+              },
+              body: JSON.stringify({
+                model: activeModel,
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  { role: "user", content: message },
+                ],
+                temperature: activeTemperature,
+                max_tokens: activeMaxTokens,
+              }),
             },
-            body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: message }
-              ],
-              temperature: 0.5,
-              max_tokens: 1024
-            })
-          });
+          );
 
           if (groqRes.ok) {
             const groqData = await groqRes.json();
@@ -219,12 +314,17 @@ ${contextBlock}
         }
       }
 
-      // Fallback Response if LLM key is missing or errored
+      // Fallback Response if LLM call fails or key is unconfigured
       if (!aiResponseText) {
         if (retrievedChunks.length > 0) {
-          aiResponseText = `Based on the knowledge base for ${project.name}:\n\n${retrievedChunks[0].text.substring(0, 500)}...`;
+          const cleanSnippet = retrievedChunks[0].text
+            .replace(/\[Category: [^\]]+\]/gi, '')
+            .replace(/Title:\s*[^\n]+/gi, '')
+            .replace(/Tags:\s*[^\n]+/gi, '')
+            .trim();
+          aiResponseText = cleanSnippet || `Here is what I found in ${project.name}'s portfolio:\n\n${retrievedChunks[0].text}`;
         } else {
-          aiResponseText = `Thank you for reaching out! I am the AI assistant for ${project.name}. Currently, no matching information was found in the project's knowledge base for your query.`;
+          aiResponseText = `Thank you for reaching out! I am the AI assistant for ${project.name}. Feel free to ask anything about experience, skills, or portfolio projects!`;
         }
       }
 
@@ -278,6 +378,11 @@ ${contextBlock}
           source: c.source || c.category || 'Knowledge Base',
           snippet: c.text.substring(0, 150) + '...'
         })),
+        developerConfig: {
+          customCss: settings?.customCss || "",
+          customHtml: settings?.customHtml || "",
+          widgetVersion: settings?.widgetVersion || "v1.0.0",
+        },
         usage: {
           creditsUsed: 1,
           remainingCredits: 499

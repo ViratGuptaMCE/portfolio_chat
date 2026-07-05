@@ -6,6 +6,7 @@ import {
   uuid,
   varchar,
   integer,
+  numeric,
   bigint,
   bigserial,
   jsonb,
@@ -60,27 +61,41 @@ export const verification = pgTable("verification", {
 
 // --- PortfolioChat Core Tables ---
 
-export const projects = pgTable('projects', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 255 }).notNull(),
-  slug: varchar('slug', { length: 255 }).notNull().unique(),
-  widgetToken: varchar('widget_token', { length: 128 }).notNull().unique(),
-  apiKeyHash: varchar('api_key_hash', { length: 128 }),
-  embeddingModel: varchar('embedding_model', { length: 100 }).default('bge-large-en-v1.5'),
-  llmModel: varchar('llm_model', { length: 100 }).default('groq/llama-3.1-70b'),
-  widgetEnabled: boolean('widget_enabled').default(true),
-  apiEnabled: boolean('api_enabled').default(true),
-  apiAllowedOrigins: text('api_allowed_origins').array(),
-  apiRateLimitRpm: integer('api_rate_limit_rpm').default(20),
-  status: varchar('status', { length: 50 }).default('active'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
-}, (t) => ({
-  idx_projects_widget_token: index('idx_projects_widget_token').on(t.widgetToken),
-  idx_projects_api_key_hash: index('idx_projects_api_key_hash').on(t.apiKeyHash),
-  idx_projects_user_id: index('idx_projects_user_id').on(t.userId)
-}));
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).notNull().unique(),
+    widgetToken: varchar("widget_token", { length: 128 }).notNull().unique(),
+    apiKeyHash: varchar("api_key_hash", { length: 128 }),
+    embeddingModel: varchar("embedding_model", { length: 100 }).default(
+      "bge-large-en-v1.5",
+    ),
+    llmModel: varchar("llm_model", { length: 100 }).default(
+      "groq/openai/gpt-oss-120b",
+    ),
+    widgetEnabled: boolean("widget_enabled").default(true),
+    apiEnabled: boolean("api_enabled").default(true),
+    apiAllowedOrigins: text("api_allowed_origins").array(),
+    apiRateLimitRpm: integer("api_rate_limit_rpm").default(20),
+    status: varchar("status", { length: 50 }).default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    idx_projects_widget_token: index("idx_projects_widget_token").on(
+      t.widgetToken,
+    ),
+    idx_projects_api_key_hash: index("idx_projects_api_key_hash").on(
+      t.apiKeyHash,
+    ),
+    idx_projects_user_id: index("idx_projects_user_id").on(t.userId),
+  }),
+);
 
 export const documents = pgTable('documents', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -160,6 +175,37 @@ export const widgetConfigs = pgTable('widget_configs', {
   allowedDomains: text('allowed_domains').array(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 });
+
+export const projectSettings = pgTable('project_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }).unique(),
+  
+  // Model & Intelligence Settings
+  llmModel: varchar('llm_model', { length: 100 }).default('openai/gpt-oss-120b'),
+  embeddingModel: varchar('embedding_model', { length: 100 }).default('bge-large-en-v1.5'),
+  temperature: numeric('temperature', { precision: 3, scale: 2 }).default('0.30'),
+  maxTokens: integer('max_tokens').default(500),
+  modelTone: varchar('model_tone', { length: 50 }).default('professional'),
+  modelLanguage: varchar('model_language', { length: 50 }).default('auto'),
+  systemInstructions: text('system_instructions'),
+  
+  // API & Security Controls
+  apiEnabled: boolean('api_enabled').default(true),
+  apiAllowedOrigins: text('api_allowed_origins').array().default(sql`'{}'`),
+  apiRateLimitRpm: integer('api_rate_limit_rpm').default(20),
+  
+  // Widget Controls & Developer Customization
+  widgetEnabled: boolean('widget_enabled').default(true),
+  widgetVersion: varchar('widget_version', { length: 50 }).default('v1.0.0'),
+  allowedDomains: text('allowed_domains').array().default(sql`'{}'`),
+  customCss: text('custom_css'),
+  customHtml: text('custom_html'),
+  
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
+}, (t) => ({
+  idx_project_settings_project: index('idx_project_settings_project').on(t.projectId)
+}));
 
 export const credits = pgTable('credits', {
   id: uuid('id').primaryKey().defaultRandom(),

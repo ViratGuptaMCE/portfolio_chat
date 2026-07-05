@@ -1,6 +1,41 @@
 "use server";
 
-import { db, projects, chatSessions, conversationMessages, eq, and, desc, asc, inArray } from "@portfoliochat/db";
+import { db, projects, chatSessions, conversationMessages, eq, and, desc, asc, inArray, redisGet, redisSet, redisDel } from "@portfoliochat/db";
+
+async function triggerQStashEvent(destination, payload) {
+  const apiUrl = process.env.API_URL || "http://localhost:8080";
+  const qstashToken = process.env.QSTASH_TOKEN;
+  const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
+  const isLocalTarget = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
+
+  if (qstashToken && !isLocalTarget) {
+    const destinationUrl = `${apiUrl}${destination}`;
+    const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
+    const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
+
+    console.log(`[QSTASH QUEUE] Publishing event to ${publishUrl}...`);
+    try {
+      await fetch(publishUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${qstashToken}`,
+          "Content-Type": "application/json",
+          "Upstash-Retries": "3"
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.error(`[QSTASH QUEUE ERROR]`, err.message);
+    }
+  }
+
+  // Fallback direct trigger
+  fetch(`${apiUrl}${destination}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
 
 function getDateGroupLabel(date) {
   const now = new Date();
@@ -25,15 +60,23 @@ function getDateGroupLabel(date) {
 
 export async function getProjectConversations(userId, projectId, { dateFilter = "all", sourceFilter = "all", searchQuery = "" } = {}) {
   if (!userId || !projectId) return [];
+  const isDefaultQuery = dateFilter === "all" && sourceFilter === "all" && !searchQuery.trim();
+  const cacheKey = `conversations:${projectId}`;
 
   try {
-    // 1. Verify project ownership
+    // 1. Check Redis cache for default query
+    if (isDefaultQuery) {
+      const cached = await redisGet(cacheKey);
+      if (cached) return cached;
+    }
+
+    // 2. Verify project ownership
     const [project] = await db.select().from(projects).where(
       and(eq(projects.id, projectId), eq(projects.userId, userId))
     );
     if (!project) return [];
 
-    // 2. Query sessions
+    // 3. Query sessions
     let conditions = [eq(chatSessions.projectId, projectId)];
 
     if (sourceFilter && sourceFilter !== "all") {
@@ -47,7 +90,7 @@ export async function getProjectConversations(userId, projectId, { dateFilter = 
 
     if (!sessions || sessions.length === 0) return [];
 
-    // 3. For each session, fetch the first user message as a preview snippet
+    // 4. For each session, fetch the first user message as a preview snippet
     const sessionIds = sessions.map(s => s.id);
     const messages = await db.select()
       .from(conversationMessages)
@@ -82,6 +125,10 @@ export async function getProjectConversations(userId, projectId, { dateFilter = 
       };
     });
 
+    if (isDefaultQuery && formattedSessions.length > 0) {
+      await redisSet(cacheKey, formattedSessions, 300); // 5 min TTL
+    }
+
     let filtered = formattedSessions;
 
     if (dateFilter === "today") {
@@ -114,8 +161,12 @@ export async function getProjectConversations(userId, projectId, { dateFilter = 
 
 export async function getConversationDetails(userId, projectId, sessionId) {
   if (!userId || !projectId || !sessionId) return null;
+  const cacheKey = `conversation:${sessionId}`;
 
   try {
+    const cached = await redisGet(cacheKey);
+    if (cached) return cached;
+
     const [project] = await db.select().from(projects).where(
       and(eq(projects.id, projectId), eq(projects.userId, userId))
     );
@@ -131,7 +182,7 @@ export async function getConversationDetails(userId, projectId, sessionId) {
       .where(and(eq(conversationMessages.sessionId, sessionId), eq(conversationMessages.projectId, projectId)))
       .orderBy(asc(conversationMessages.createdAt));
 
-    return {
+    const result = {
       session: {
         id: session.id,
         source: session.source,
@@ -152,6 +203,9 @@ export async function getConversationDetails(userId, projectId, sessionId) {
         createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : null
       }))
     };
+
+    await redisSet(cacheKey, result, 600); // 10 min TTL
+    return result;
   } catch (error) {
     console.error("Error fetching conversation details:", error);
     return null;
@@ -170,6 +224,19 @@ export async function toggleFlagConversation(userId, projectId, sessionId, flagg
     await db.update(chatSessions)
       .set({ isFlagged: flagged, flagNote: note })
       .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.projectId, projectId)));
+
+    // Invalidate Redis caches
+    await redisDel(`conversations:${projectId}`);
+    await redisDel(`conversation:${sessionId}`);
+
+    // Queue QStash Analytics Event
+    triggerQStashEvent("/webhooks/analytics", {
+      type: "conversation_flagged",
+      projectId,
+      sessionId,
+      flagged,
+      note
+    });
 
     return { success: true };
   } catch (error) {
@@ -190,6 +257,17 @@ export async function deleteConversation(userId, projectId, sessionId) {
     await db.delete(chatSessions).where(
       and(eq(chatSessions.id, sessionId), eq(chatSessions.projectId, projectId))
     );
+
+    // Invalidate Redis caches
+    await redisDel(`conversations:${projectId}`);
+    await redisDel(`conversation:${sessionId}`);
+
+    // Queue QStash Analytics Event
+    triggerQStashEvent("/webhooks/analytics", {
+      type: "conversation_deleted",
+      projectId,
+      sessionId
+    });
 
     return { success: true };
   } catch (error) {

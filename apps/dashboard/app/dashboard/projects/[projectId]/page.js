@@ -261,8 +261,12 @@ const data = await response.json();
 console.log("AI Answer:", data.reply);`;
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col gap-6 relative pb-16">
-      
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="flex flex-col gap-6 relative pb-16"
+    >
       {/* Toast Notification Banner */}
       <AnimatePresence>
         {notification && (
@@ -271,16 +275,23 @@ console.log("AI Answer:", data.reply);`;
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={`p-4 rounded-2xl flex items-center justify-between border shadow-lg ${
-              notification.type === 'error'
-                ? 'bg-red-500/10 border-red-500/30 text-red-200'
-                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+              notification.type === "error"
+                ? "bg-red-500/10 border-red-500/30 text-red-200"
+                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
             }`}
           >
             <div className="flex items-center gap-3">
-              <md-icon>{notification.type === 'error' ? 'error' : 'check_circle'}</md-icon>
-              <span className="text-sm font-medium">{notification.message}</span>
+              <md-icon>
+                {notification.type === "error" ? "error" : "check_circle"}
+              </md-icon>
+              <span className="text-sm font-medium">
+                {notification.message}
+              </span>
             </div>
-            <button onClick={() => setNotification(null)} className="opacity-70 hover:opacity-100">
+            <button
+              onClick={() => setNotification(null)}
+              className="opacity-70 hover:opacity-100"
+            >
               <md-icon style={{ fontSize: 18 }}>close</md-icon>
             </button>
           </motion.div>
@@ -288,50 +299,89 @@ console.log("AI Answer:", data.reply);`;
       </AnimatePresence>
 
       {/* Quick Stats */}
-      <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div
+        variants={item}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
         {[
-          { label: "Status", value: project.status === 'ready' || project.status === 'active' ? 'Active & Ready' : 'Processing', icon: "check_circle", color: "text-accent-emerald" },
-          { label: "Embedding Model", value: project.embeddingModel || 'bge-large-en-v1.5', icon: "model_training", color: "text-accent-purple" },
-          { label: "LLM Provider", value: project.llmModel || 'groq/llama-3.1-70b', icon: "psychology", color: "text-accent-indigo" }
+          {
+            label: "Status",
+            value:
+              project.status === "ready" || project.status === "active"
+                ? "Active & Ready"
+                : "Processing",
+            icon: "check_circle",
+            color: "text-accent-emerald",
+          },
+          {
+            label: "Embedding Model",
+            value: project.embeddingModel || "bge-large-en-v1.5",
+            icon: "model_training",
+            color: "text-accent-purple",
+          },
+          {
+            label: "LLM Provider",
+            value: project.llmModel || "groq/openai/gpt-oss-120b",
+            icon: "psychology",
+            color: "text-accent-indigo",
+          },
         ].map((stat, i) => (
-          <div key={i} className="bg-surface-glass backdrop-blur-md border border-surface-border rounded-2xl p-5 flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <div className={`w-10 h-10 rounded-xl bg-surface-border/50 flex items-center justify-center ${stat.color}`}>
+          <div
+            key={i}
+            className="bg-surface-glass backdrop-blur-md border border-surface-border rounded-2xl p-5 flex items-center gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)]"
+          >
+            <div
+              className={`w-10 h-10 rounded-xl bg-surface-border/50 flex items-center justify-center ${stat.color}`}
+            >
               <md-icon>{stat.icon}</md-icon>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-text-tertiary font-mono uppercase tracking-widest">{stat.label}</span>
-              <span className="text-base font-medium text-text-primary mt-1">{stat.value}</span>
+              <span className="text-xs text-text-tertiary font-mono uppercase tracking-widest">
+                {stat.label}
+              </span>
+              <span className="text-base font-medium text-text-primary mt-1">
+                {stat.value}
+              </span>
             </div>
           </div>
         ))}
       </motion.div>
 
       {/* Primary Credentials Grid */}
-      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+      <motion.div
+        variants={item}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      >
         {/* Widget Script Integration & Public Token */}
         <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent-indigo/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
-          
+
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
               <md-icon className="text-accent-indigo">web</md-icon>
               Public Widget Token
             </h2>
-            <p className="text-sm text-text-secondary">Embed this publishable token on public sites for the drop-in chatbot widget.</p>
+            <p className="text-sm text-text-secondary">
+              Embed this publishable token on public sites for the drop-in
+              chatbot widget.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">Public Token Value</label>
+              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
+                Public Token Value
+              </label>
               <div className="bg-bg-elevated border border-surface-border rounded-xl px-4 py-2.5 font-mono text-xs text-accent-indigo flex items-center justify-between">
                 <span className="truncate">{widgetTokenToUse}</span>
-                <button 
-                  onClick={() => copyToClipboard(widgetTokenToUse, 'pubToken')} 
+                <button
+                  onClick={() => copyToClipboard(widgetTokenToUse, "pubToken")}
                   className="text-text-tertiary hover:text-white transition-colors p-1"
                   title="Copy Public Token"
                 >
-                  <md-icon style={{ fontSize: 16 }}>{copiedField === 'pubToken' ? 'check' : 'content_copy'}</md-icon>
+                  <md-icon style={{ fontSize: 16 }}>
+                    {copiedField === "pubToken" ? "check" : "content_copy"}
+                  </md-icon>
                 </button>
               </div>
             </div>
@@ -340,18 +390,29 @@ console.log("AI Answer:", data.reply);`;
               <div className="absolute -inset-1 bg-gradient-to-r from-accent-indigo/20 to-accent-purple/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-500" />
               <div className="relative bg-[#0d0d12] border border-surface-border-strong rounded-xl p-4 overflow-hidden">
                 <pre className="font-mono text-[13px] text-text-secondary overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
-                  <span className="text-accent-pink">&lt;script</span>{'\n'}
-                  {'  '}src=<span className="text-accent-emerald">"https://cdn.portfoliochat.dev/widget.js"</span>{'\n'}
-                  {'  '}data-token=<span className="text-accent-emerald">"{"{API_TOKEN}"}"</span>{'\n'}
-                  {'  '}<span className="text-accent-pink">defer</span>{'\n'}
+                  <span className="text-accent-pink">&lt;script</span>
+                  {"\n"}
+                  {"  "}src=
+                  <span className="text-accent-emerald">
+                    "https://cdn.portfoliochat.dev/widget.js"
+                  </span>
+                  {"\n"}
+                  {"  "}data-token=
+                  <span className="text-accent-emerald">"{"{API_TOKEN}"}"</span>
+                  {"\n"}
+                  {"  "}
+                  <span className="text-accent-pink">defer</span>
+                  {"\n"}
                   <span className="text-accent-pink">&gt;&lt;/script&gt;</span>
                 </pre>
-                <button 
-                  onClick={() => copyToClipboard(scriptTag, 'script')}
+                <button
+                  onClick={() => copyToClipboard(scriptTag, "script")}
                   className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-surface-glass border border-surface-border flex items-center justify-center hover:bg-surface-border/80 text-text-secondary hover:text-white transition-all active:scale-95"
                   title="Copy Script"
                 >
-                  <md-icon style={{ fontSize: 16 }}>{copiedField === 'script' ? 'check' : 'content_copy'}</md-icon>
+                  <md-icon style={{ fontSize: 16 }}>
+                    {copiedField === "script" ? "check" : "content_copy"}
+                  </md-icon>
                 </button>
               </div>
             </div>
@@ -361,7 +422,7 @@ console.log("AI Answer:", data.reply);`;
         {/* SHA-256 Hashed Secret API Credentials */}
         <div className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent-purple/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
-          
+
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -373,9 +434,12 @@ console.log("AI Answer:", data.reply);`;
                   SHA-256 Hashed in DB
                 </span>
               </div>
-              <p className="text-sm text-text-secondary">Used for backend API access (`pct_secret_...`). Raw key is never stored in DB.</p>
+              <p className="text-sm text-text-secondary">
+                Used for backend API access (`pct_secret_...`). Raw key is never
+                stored in DB.
+              </p>
             </div>
-            
+
             <button
               onClick={() => setShowRegenModal(true)}
               className="px-3 py-1.5 rounded-xl bg-surface-border/50 border border-surface-border hover:bg-red-500/20 hover:border-red-500/40 text-text-secondary hover:text-red-300 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 shrink-0"
@@ -386,50 +450,70 @@ console.log("AI Answer:", data.reply);`;
           </div>
 
           <div className="flex flex-col gap-4 mt-1">
-            
             {/* Project ID */}
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">Project ID</label>
+              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
+                Project ID
+              </label>
               <div className="bg-bg-elevated border border-surface-border rounded-xl px-4 py-2.5 font-mono text-xs text-text-primary flex items-center justify-between">
                 <span>{project.id}</span>
-                <button 
-                  onClick={() => copyToClipboard(project.id, 'projectId')} 
+                <button
+                  onClick={() => copyToClipboard(project.id, "projectId")}
                   className="text-text-tertiary hover:text-white transition-colors p-1"
                   title="Copy Project ID"
                 >
-                  <md-icon style={{ fontSize: 16 }}>{copiedField === 'projectId' ? 'check' : 'content_copy'}</md-icon>
+                  <md-icon style={{ fontSize: 16 }}>
+                    {copiedField === "projectId" ? "check" : "content_copy"}
+                  </md-icon>
                 </button>
               </div>
             </div>
 
             {/* Secret API Key (Pure Masked Display) */}
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">Secret API Key</label>
+              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
+                Secret API Key
+              </label>
               <div className="bg-bg-elevated border border-surface-border rounded-xl px-4 py-2.5 font-mono text-xs text-text-tertiary flex items-center justify-between gap-2 overflow-hidden">
-                <span className="font-mono tracking-widest">••••••••••••••••••••••••••••••••••••••••</span>
+                <span className="font-mono tracking-widest">
+                  ••••••••••••••••••••••••••••••••••••••••
+                </span>
                 <span className="text-[10px] font-mono uppercase bg-surface-border px-2 py-0.5 rounded text-text-tertiary shrink-0">
                   Hidden
                 </span>
               </div>
               <p className="text-[11px] text-text-tertiary mt-1">
-                For security, secret keys are stored strictly as SHA-256 hashes in the database and cannot be unmasked. Generate a new key if lost.
+                For security, secret keys are stored strictly as SHA-256 hashes
+                in the database and cannot be unmasked. Generate a new key if
+                lost.
               </p>
             </div>
-
           </div>
         </div>
-
       </motion.div>
 
       {/* Code Examples Section */}
-      <motion.div variants={item} className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+      <motion.div
+        variants={item}
+        className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
+      >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
               <md-icon className="text-accent-pink">code</md-icon>
               Sample API Call Implementations
             </h2>
-            <p className="text-sm text-text-secondary">Placeholders <code className="font-mono text-xs text-accent-pink">&#123;SECRET_KEY&#125;</code> and <code className="font-mono text-xs text-accent-pink">&#123;PROJECT_ID&#125;</code> show exact usage format.</p>
+            <p className="text-sm text-text-secondary">
+              Placeholders{" "}
+              <code className="font-mono text-xs text-accent-pink">
+                &#123;SECRET_KEY&#125;
+              </code>{" "}
+              and{" "}
+              <code className="font-mono text-xs text-accent-pink">
+                &#123;PROJECT_ID&#125;
+              </code>{" "}
+              show exact usage format.
+            </p>
           </div>
 
           {/* Language Tabs */}
@@ -437,7 +521,7 @@ console.log("AI Answer:", data.reply);`;
             {[
               { id: "python", label: "Python", icon: "terminal" },
               { id: "curl", label: "cURL / JSON", icon: "data_object" },
-              { id: "javascript", label: "JavaScript", icon: "javascript" }
+              { id: "javascript", label: "JavaScript", icon: "javascript" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -465,21 +549,38 @@ console.log("AI Answer:", data.reply);`;
               {activeCodeTab === "javascript" && jsCode}
             </pre>
             <button
-              onClick={() => copyToClipboard(
-                activeCodeTab === "python" ? pythonCode : activeCodeTab === "curl" ? jsonCurlCode : jsCode,
-                `code_${activeCodeTab}`
-              )}
+              onClick={() =>
+                copyToClipboard(
+                  activeCodeTab === "python"
+                    ? pythonCode
+                    : activeCodeTab === "curl"
+                      ? jsonCurlCode
+                      : jsCode,
+                  `code_${activeCodeTab}`,
+                )
+              }
               className="absolute top-4 right-4 px-3 py-1.5 rounded-xl bg-surface-glass border border-surface-border flex items-center gap-1.5 text-xs text-text-secondary hover:text-white hover:bg-surface-border transition-all active:scale-95 shadow-md"
             >
-              <md-icon style={{ fontSize: 16 }}>{copiedField === `code_${activeCodeTab}` ? 'check' : 'content_copy'}</md-icon>
-              <span>{copiedField === `code_${activeCodeTab}` ? 'Copied' : 'Copy Snippet'}</span>
+              <md-icon style={{ fontSize: 16 }}>
+                {copiedField === `code_${activeCodeTab}`
+                  ? "check"
+                  : "content_copy"}
+              </md-icon>
+              <span>
+                {copiedField === `code_${activeCodeTab}`
+                  ? "Copied"
+                  : "Copy Snippet"}
+              </span>
             </button>
           </div>
         </div>
       </motion.div>
 
       {/* Live Interactive API Tester / Playground */}
-      <motion.div variants={item} className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative">
+      <motion.div
+        variants={item}
+        className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative"
+      >
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald animate-pulse" />
@@ -488,7 +589,14 @@ console.log("AI Answer:", data.reply);`;
               Live API Tester
             </h2>
           </div>
-          <p className="text-sm text-text-secondary">Test the <code className="font-mono text-xs text-accent-emerald">POST /v1/chat/message</code> backend endpoint directly against this project's vectorized knowledge base in real-time.</p>
+          <p className="text-sm text-text-secondary">
+            Test the{" "}
+            <code className="font-mono text-xs text-accent-emerald">
+              POST /v1/chat/message
+            </code>{" "}
+            backend endpoint directly against this project's vectorized
+            knowledge base in real-time.
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-3">
@@ -498,7 +606,7 @@ console.log("AI Answer:", data.reply);`;
             onChange={(e) => setPlaygroundQuery(e.target.value)}
             placeholder="Type a test question for your portfolio knowledge base..."
             className="flex-1 bg-bg-elevated border border-surface-border rounded-2xl px-5 py-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-emerald transition-all"
-            onKeyDown={(e) => e.key === 'Enter' && handleRunPlaygroundTest()}
+            onKeyDown={(e) => e.key === "Enter" && handleRunPlaygroundTest()}
           />
           <button
             onClick={handleRunPlaygroundTest}
@@ -524,7 +632,7 @@ console.log("AI Answer:", data.reply);`;
           {(playgroundResponse || playgroundError) && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="flex flex-col gap-4 pt-4 border-t border-surface-border"
             >
@@ -542,7 +650,9 @@ console.log("AI Answer:", data.reply);`;
 
               {playgroundError && (
                 <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm font-mono flex items-start gap-3">
-                  <md-icon className="text-red-400 shrink-0">error_outline</md-icon>
+                  <md-icon className="text-red-400 shrink-0">
+                    error_outline
+                  </md-icon>
                   <div>{playgroundError}</div>
                 </div>
               )}
@@ -590,19 +700,29 @@ console.log("AI Answer:", data.reply);`;
                   <md-icon style={{ fontSize: 24 }}>warning</md-icon>
                 </div>
                 <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold text-text-primary">Regenerate Secret API Key?</h3>
-                  <p className="text-xs text-text-tertiary font-mono">Invalidates previous SHA-256 hash immediately.</p>
+                  <h3 className="text-lg font-semibold text-text-primary">
+                    Regenerate Secret API Key?
+                  </h3>
+                  <p className="text-xs text-text-tertiary font-mono">
+                    Invalidates previous SHA-256 hash immediately.
+                  </p>
                 </div>
               </div>
 
               <p className="text-xs text-text-secondary leading-relaxed">
-                Regenerating your Secret API Key will immediately revoke your old key. Any external API calls using the old key will stop working.
+                Regenerating your Secret API Key will immediately revoke your
+                old key. Any external API calls using the old key will stop
+                working.
               </p>
 
               {/* Typing Confirmation Requirement (Non-Pastable) */}
               <div className="flex flex-col gap-2 bg-[#0b0b10] border border-surface-border rounded-2xl p-4">
                 <label className="text-xs text-text-secondary">
-                  To confirm, type <span className="font-mono text-white select-none bg-surface-border px-1.5 py-0.5 rounded text-[11px] font-semibold text-red-300">"I confirm to regenerate the key"</span> below:
+                  To confirm, type{" "}
+                  <span className="font-mono text-white select-none bg-surface-border px-1.5 py-0.5 rounded text-[11px] font-semibold text-red-300">
+                    "I confirm to regenerate the key"
+                  </span>{" "}
+                  below:
                 </label>
                 <input
                   type="text"
@@ -618,7 +738,8 @@ console.log("AI Answer:", data.reply);`;
                   spellCheck="false"
                 />
                 <span className="text-[10px] text-text-tertiary font-mono italic">
-                  * Note: Copy-pasting is disabled. Phrase must be typed manually.
+                  * Note: Copy-pasting is disabled. Phrase must be typed
+                  manually.
                 </span>
               </div>
 
@@ -634,7 +755,11 @@ console.log("AI Answer:", data.reply);`;
                 </button>
                 <button
                   onClick={handleRegenerateKey}
-                  disabled={isRegenerating || regenConfirmInput.trim() !== "I confirm to regenerate the key"}
+                  disabled={
+                    isRegenerating ||
+                    regenConfirmInput.trim() !==
+                      "I confirm to regenerate the key"
+                  }
                   className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium text-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shadow-lg shadow-red-500/20"
                 >
                   {isRegenerating ? (
@@ -667,8 +792,12 @@ console.log("AI Answer:", data.reply);`;
                   <md-icon style={{ fontSize: 26 }}>key_visualizer</md-icon>
                 </div>
                 <div className="flex flex-col">
-                  <h3 className="text-lg font-semibold text-text-primary">Your Secret API Key</h3>
-                  <span className="text-xs text-amber-400 font-mono font-medium">One-Time Security Display</span>
+                  <h3 className="text-lg font-semibold text-text-primary">
+                    Your Secret API Key
+                  </h3>
+                  <span className="text-xs text-amber-400 font-mono font-medium">
+                    One-Time Security Display
+                  </span>
                 </div>
               </div>
 
@@ -679,21 +808,35 @@ console.log("AI Answer:", data.reply);`;
                   This won't be shown again. Store it somewhere safe!
                 </span>
                 <p className="text-xs text-amber-200/80 leading-relaxed mt-1">
-                  For security, the server hashes this key using SHA-256 and deletes the raw key from database storage. Once you close this box, this raw key cannot be retrieved or shown again.
+                  For security, the server hashes this key using SHA-256 and
+                  deletes the raw key from database storage. Once you close this
+                  box, this raw key cannot be retrieved or shown again.
                 </p>
               </div>
 
               {/* Secret Key Raw Display Box */}
               <div className="flex flex-col gap-2">
-                <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">Secret API Key</label>
+                <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
+                  Secret API Key
+                </label>
                 <div className="bg-[#0b0b10] border border-surface-border-strong rounded-xl p-4 font-mono text-xs md:text-sm text-emerald-300 flex items-center justify-between gap-3 overflow-hidden">
-                  <span className="truncate selection:bg-emerald-500/30">{newSecretKeyModal}</span>
+                  <span className="truncate selection:bg-emerald-500/30">
+                    {newSecretKeyModal}
+                  </span>
                   <button
-                    onClick={() => copyToClipboard(newSecretKeyModal, 'modalSecretKey')}
+                    onClick={() =>
+                      copyToClipboard(newSecretKeyModal, "modalSecretKey")
+                    }
                     className="px-3 py-1.5 rounded-lg bg-surface-glass border border-surface-border flex items-center gap-1.5 text-xs text-text-secondary hover:text-white transition-all active:scale-95 shrink-0"
                   >
-                    <md-icon style={{ fontSize: 16 }}>{copiedField === 'modalSecretKey' ? 'check' : 'content_copy'}</md-icon>
-                    <span>{copiedField === 'modalSecretKey' ? 'Copied' : 'Copy'}</span>
+                    <md-icon style={{ fontSize: 16 }}>
+                      {copiedField === "modalSecretKey"
+                        ? "check"
+                        : "content_copy"}
+                    </md-icon>
+                    <span>
+                      {copiedField === "modalSecretKey" ? "Copied" : "Copy"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -712,7 +855,6 @@ console.log("AI Answer:", data.reply);`;
           </div>
         )}
       </AnimatePresence>
-
     </motion.div>
   );
 }

@@ -47,6 +47,20 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    sendResetPassword: async ({ user, url, token }) => {
+      console.log(`\n\n[RESET PASSWORD URL] for ${user.email}:\n${url}\n\n`);
+      sendEmailAsync(
+        user.email,
+        "Reset your PortfolioChat Password",
+        `
+        <div style="font-family: sans-serif; max-w-xl mx-auto p-4">
+          <h2 style="color: #111;">Reset Your Password</h2>
+          <p style="color: #444;">Please click the button below to reset your password.</p>
+          <a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #111; color: #fff; text-decoration: none; border-radius: 8px; margin-top: 16px;">Reset Password</a>
+        </div>
+        `
+      ).catch(console.error);
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

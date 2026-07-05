@@ -7,13 +7,7 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
   const [deviceFrame, setDeviceFrame] = useState("desktop"); // 'desktop' | 'mobile'
   const [isOpen, setIsOpen] = useState(true);
   const [testInput, setTestInput] = useState("");
-  const [testMessages, setTestMessages] = useState([
-    {
-      id: 1,
-      role: "assistant",
-      content: "Hello! I am your portfolio AI assistant. Feel free to ask me about skills, projects, or work experience!"
-    }
-  ]);
+  const [customTestMessages, setCustomTestMessages] = useState([]);
 
   const appearance = draftConfig?.appearance || {};
   const launcher = draftConfig?.launcher || {};
@@ -23,6 +17,17 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
   const bubbles = draftConfig?.bubbles || {};
   const input = draftConfig?.input || {};
   const suggestedQuestions = draftConfig?.suggestedQuestions || [];
+
+  const primaryGreeting = welcome.greeting || "Hello! I am your portfolio AI assistant. Feel free to ask me about skills, projects, or work experience!";
+
+  const allMessages = [
+    {
+      id: "primary-greeting",
+      role: "assistant",
+      content: primaryGreeting
+    },
+    ...customTestMessages
+  ];
 
   const handleSendTestMessage = (textToSend) => {
     const query = textToSend || testInput;
@@ -35,18 +40,12 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
       content: "This is a live test preview response demonstrating real-time styling, colors, font family, and prompt chip interaction."
     };
 
-    setTestMessages((prev) => [...prev, userMsg, botMsg]);
+    setCustomTestMessages((prev) => [...prev, userMsg, botMsg]);
     setTestInput("");
   };
 
   const handleResetTestChat = () => {
-    setTestMessages([
-      {
-        id: 1,
-        role: "assistant",
-        content: welcome.greeting || "Hello! I am your portfolio AI assistant. Feel free to ask me anything!"
-      }
-    ]);
+    setCustomTestMessages([]);
   };
 
   // --- Dynamic Theme & Color Overrides Computation ---
@@ -128,6 +127,35 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
 
   // Bottom position for Chat Window in Desktop mode so it ends 12px ABOVE top of launcher button!
   const chatWindowBottomPx = `${bottomPaddingNum + launcherHeightNum + 12}px`;
+
+  // Dynamic Attention Animation Physics
+  const getAttentionAnimation = () => {
+    if (isOpen) return { opacity: 1, scale: 1, y: 0, rotate: 0 };
+    const animType = launcher.animation || "pulse";
+    if (animType === "bounce") {
+      return {
+        opacity: 1,
+        y: [0, -12, 0],
+        transition: { duration: 1.6, repeat: Infinity, ease: [0.77, 0, 0.175, 1] }
+      };
+    }
+    if (animType === "pulse") {
+      return {
+        opacity: 1,
+        scale: [1, 1.07, 1],
+        transition: { duration: 2, repeat: Infinity, ease: [0.23, 1, 0.32, 1] }
+      };
+    }
+    if (animType === "shake") {
+      return {
+        opacity: 1,
+        rotate: [0, -10, 10, -8, 8, -4, 4, 0],
+        scale: [1, 1.05, 1.05, 1.05, 1.05, 1.05, 1.05, 1],
+        transition: { duration: 2.2, repeat: Infinity, repeatDelay: 1.2, ease: "easeInOut" }
+      };
+    }
+    return { opacity: 1, scale: 1, y: 0, rotate: 0 };
+  };
 
   return (
     <div className="flex flex-col gap-4 w-full h-full min-h-[820px]">
@@ -276,7 +304,7 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
                   )}
 
                   {/* Test Messages */}
-                  {testMessages.map((m) => (
+                  {allMessages.map((m) => (
                     <div
                       key={m.id}
                       className={`flex flex-col gap-1 text-xs max-w-[85%] ${
@@ -358,11 +386,29 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
             )}
           </AnimatePresence>
 
-          {/* Launcher Floating Button (Supports Circle, Square, Pill Capsule, and Floating Elevation Shapes!) */}
+          {/* Glow Ring Aura Layer */}
+          {launcher.animation === "glow" && !isOpen && (
+            <motion.div
+              animate={{ scale: [1, 1.45, 1.65], opacity: [0.75, 0.35, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+              style={{
+                backgroundColor: primaryColor,
+                borderRadius: launcher.shape === "circle" ? "9999px" : launcher.shape === "square" ? "16px" : launcher.shape === "pill" ? "9999px" : "20px",
+                width: launcher.shape === "pill" ? "100%" : getLauncherSizePx(),
+                height: getLauncherSizePx(),
+                bottom: deviceFrame === "mobile" ? "20px" : `${bottomPaddingNum}px`,
+                right: deviceFrame === "mobile" ? "20px" : (launcher.position === "bottom-left" ? "auto" : `${sidePaddingNum}px`),
+                left: deviceFrame === "mobile" ? "auto" : (launcher.position === "bottom-left" ? `${sidePaddingNum}px` : "auto")
+              }}
+              className="absolute z-20 pointer-events-none"
+            />
+          )}
+
+          {/* Launcher Floating Button */}
           <motion.button
             type="button"
             initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            animate={getAttentionAnimation()}
             onClick={() => setIsOpen(!isOpen)}
             style={{
               backgroundColor: primaryColor,
@@ -376,12 +422,10 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
               right: deviceFrame === "mobile" ? "20px" : (launcher.position === "bottom-left" ? "auto" : `${sidePaddingNum}px`),
               left: deviceFrame === "mobile" ? "auto" : (launcher.position === "bottom-left" ? `${sidePaddingNum}px` : "auto")
             }}
-            className={`flex items-center justify-center absolute z-30 cursor-pointer transition-all active:scale-95 ${
+            className={`flex items-center justify-center absolute z-30 cursor-pointer transition-shadow active:scale-95 ${
               launcher.shape === "floating"
                 ? "shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-2 border-white/25 hover:-translate-y-1.5"
                 : "shadow-2xl"
-            } ${
-              launcher.animation === "pulse" ? "animate-pulse" : launcher.animation === "bounce" ? "animate-bounce" : ""
             }`}
           >
             {isOpen ? (
