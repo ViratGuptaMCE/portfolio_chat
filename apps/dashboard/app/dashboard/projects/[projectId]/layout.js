@@ -36,7 +36,7 @@ export default function ProjectLayout({ children, params }) {
             <md-icon style={{ color: "var(--text-secondary)", fontSize: 20 }}>arrow_back</md-icon>
           </button>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Project Command Center</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">Project Center</h1>
             <p className="text-xs text-text-tertiary font-mono uppercase tracking-widest">{projectId}</p>
           </div>
         </div>

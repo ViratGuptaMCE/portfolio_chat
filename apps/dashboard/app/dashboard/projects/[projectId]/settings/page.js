@@ -28,12 +28,6 @@ const MODEL_OPTIONS = [
     desc: "Balanced speed and accuracy for standard conversational workloads.",
     tag: "Fast & Efficient",
   },
-  {
-    id: "qwen/qwen3.6-27b",
-    name: "Qwen 3.6 27B",
-    desc: "Multilingual & technical code understanding specialist model.",
-    tag: "Code & Multilingual",
-  },
 ];
 
 const TONE_OPTIONS = [

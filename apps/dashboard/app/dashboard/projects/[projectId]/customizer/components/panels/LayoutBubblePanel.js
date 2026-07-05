@@ -158,18 +158,41 @@ export default function LayoutBubblePanel({ draftConfig, onChange }) {
 
       <div className="h-px bg-[#e5e5e5] dark:bg-[#222]" />
 
-      {/* Input Placeholder */}
-      <div className="flex flex-col gap-1.5">
+      {/* Input Bar & Send Button Settings */}
+      <div className="flex flex-col gap-2.5">
         <label className="font-bold font-mono text-xs uppercase tracking-wider text-[#888]">
-          Input Placeholder Text
+          Input Bar & Action Button Controls
         </label>
-        <input
-          type="text"
-          value={input.placeholder || ""}
-          onChange={(e) => handleInputUpdate("placeholder", e.target.value)}
-          placeholder="Ask me anything..."
-          className="bg-[#fafafa] dark:bg-[#121215] border border-[#e5e5e5] dark:border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs font-mono outline-none focus:border-black dark:focus:border-white"
-        />
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <span className="font-medium text-[#666] dark:text-[#aaa]">Input Placeholder Text</span>
+            <input
+              type="text"
+              value={input.placeholder || ""}
+              onChange={(e) => handleInputUpdate("placeholder", e.target.value)}
+              placeholder="Ask me anything..."
+              className="bg-[#fafafa] dark:bg-[#121215] border border-[#e5e5e5] dark:border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs font-mono outline-none focus:border-black dark:focus:border-white"
+            />
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-[#fafafa] dark:bg-[#121215] border border-[#e5e5e5] dark:border-[#27272a] flex items-center justify-between">
+            <span className="font-medium text-xs">Send Button Color</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={input.sendColor || draftConfig?.appearance?.primaryColor || "#06b6d4"}
+                onChange={(e) => handleInputUpdate("sendColor", e.target.value)}
+                className="w-6 h-6 rounded-lg cursor-pointer border-none bg-transparent"
+              />
+              <input
+                type="text"
+                value={input.sendColor || draftConfig?.appearance?.primaryColor || "#06b6d4"}
+                onChange={(e) => handleInputUpdate("sendColor", e.target.value)}
+                className="w-20 bg-white dark:bg-[#0a0a0a] border border-[#ccc] dark:border-[#333] rounded-lg px-2 py-0.5 text-xs font-mono text-center outline-none"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import path from 'path';
 import webhookRoutes from './routes/webhooks/index.js';
 import internalRoutes from './routes/internal/index.js';
 import chatRoutes from './routes/chat/index.js';
+import widgetRoutes from './routes/widget/index.js';
 
 // Load environment variables from the root .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env.local') });
@@ -23,6 +24,7 @@ server.register(internalRoutes, { prefix: '/internal' });
 server.register(chatRoutes, { prefix: '/v1/chat' });
 server.register(chatRoutes, { prefix: '/api/v1/chat' });
 server.register(chatRoutes, { prefix: '/api/chat' });
+server.register(widgetRoutes);
 
 // Health check
 server.get('/health', async (request, reply) => {

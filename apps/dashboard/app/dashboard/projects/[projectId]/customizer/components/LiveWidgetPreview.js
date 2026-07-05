@@ -158,7 +158,7 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full h-full min-h-[820px]">
+    <div className="flex flex-col gap-4 w-full h-full min-h-205">
       {/* Top Preview Control Bar */}
       <div className="bg-white dark:bg-[#111] p-3.5 rounded-2xl border border-[#e5e5e5] dark:border-[#222] flex items-center justify-between gap-3 shadow-sm shrink-0">
         <div className="flex items-center gap-1.5 bg-[#fafafa] dark:bg-[#18181b] p-1 rounded-xl border border-[#e5e5e5] dark:border-[#27272a]">
@@ -212,9 +212,9 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
       </div>
 
       {/* Main Spacious Canvas Stage (820px height to fully display window heights up to 750px!) */}
-      <div className="flex-1 bg-[#e4e4e7] dark:bg-[#09090b] rounded-[2.5rem] border border-[#e5e5e5] dark:border-[#222] p-6 relative overflow-hidden flex flex-col justify-end items-center min-h-[820px] h-[820px] shadow-inner">
+      <div className="flex-1 bg-[#e4e4e7] dark:bg-[#09090b] rounded-[2.5rem] border border-[#e5e5e5] dark:border-[#222] p-6 relative overflow-hidden flex flex-col justify-end items-center min-h-205 h-205 shadow-inner">
         {/* Background Grid Pattern */}
-        <div className="absolute inset-0 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:20px_20px] opacity-50 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] dark:bg-[radial-gradient(#27272a_1px,transparent_1px)] bg-size-[20px_20px] opacity-50 pointer-events-none" />
 
         {/* Screen Container */}
         <div
@@ -374,7 +374,7 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
                   <button
                     type="button"
                     onClick={() => handleSendTestMessage()}
-                    style={{ backgroundColor: primaryColor }}
+                    style={{ backgroundColor: input.sendColor || primaryColor }}
                     className="w-8 h-8 rounded-xl text-white flex items-center justify-center hover:scale-[1.05] active:scale-[0.95] transition-all cursor-pointer shrink-0"
                   >
                     <span className="material-symbols-outlined text-sm">

@@ -31,10 +31,11 @@ export default function DeveloperPanel({ draftConfig, onChange, widgetToken, pro
     handleUpdate("allowedDomains", current.filter((d) => d !== domainToRemove));
   };
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:8080` : 'http://localhost:8080');
   const embedScript = `<script 
-  src="${typeof window !== 'undefined' ? window.location.origin : 'https://portfoliochat.ai'}/widget.js" 
+  src="${apiUrl}/v1/widget.js" 
   data-token="${widgetToken || projectId || 'YOUR_WIDGET_TOKEN'}" 
-  async>
+  defer>
 </script>`;
 
   const handleCopyEmbed = () => {

@@ -94,7 +94,7 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 
 ### 6. Project Settings Module (`apps/dashboard/app/dashboard/projects/[projectId]/settings/`)
 - **Dedicated `project_settings` Storage**: Decoupled settings table supporting standalone API users as well as widget deployments.
-- **AI Model & Intelligence Control**: Select model (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.6-27b`), tone pills, temperature slider, max tokens, target language, and custom prompt directives.
+- **AI Model & Intelligence Control**: Select model (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`), tone pills, temperature slider, max tokens, target language, and custom prompt directives.
 - **Developer & API Controls**: Master API switch, rate limit RPM slider, CORS allowed origins list, custom developer CSS, and custom developer HTML injection.
 - **Widget Release & Embed Security**: Master widget switch, semantic release versioning (`v1.0.0`), and authorized embed domain whitelisting.
 - **Keys & Danger Zone**: Public widget token, non-pastable API key regeneration modal, and non-pastable project deletion verification.

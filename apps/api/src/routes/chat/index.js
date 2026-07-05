@@ -270,6 +270,7 @@ CRITICAL RESPONSE GUIDELINES:
 3. **Tone & Language**: Maintain a ${activeTone} tone throughout.${activeLanguage !== 'auto' ? ` Respond strictly in ${activeLanguage}.` : ''}
 4. **Formatting**: Use clean, elegant Markdown formatting with bold text and bullet points where appropriate.
 5. **Accuracy**: Stick strictly to true information contained in the Knowledge Base facts.
+6. **Direct Output Only**: Do NOT output internal scratchpad reasoning or chain-of-thought analysis. Respond with the final answer immediately.
 
 ${customDirectives ? `CUSTOM INSTRUCTIONS:\n${customDirectives}\n` : ''}
 KNOWLEDGE BASE FACTS:
@@ -304,7 +305,10 @@ ${contextBlock}`;
 
           if (groqRes.ok) {
             const groqData = await groqRes.json();
-            aiResponseText = groqData.choices?.[0]?.message?.content || "";
+            let rawContent = groqData.choices?.[0]?.message?.content || "";
+            // Strip internal LLM reasoning block (<think>...</think>) if present in model response
+            rawContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+            aiResponseText = rawContent;
           } else {
             const errText = await groqRes.text();
             console.error(`[CHAT API GROQ ERROR] Status ${groqRes.status}: ${errText}`);

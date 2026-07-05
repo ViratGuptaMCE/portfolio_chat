@@ -334,4 +334,36 @@ export default async function (server) {
       return reply.status(500).send({ error: error.message });
     }
   });
+
+  // Settings Updated Webhook
+  server.post('/settings-updated', { preHandler: verifyQStashSignature }, async (request, reply) => {
+    const { projectId, updatedAt } = request.body || {};
+    console.log(`[API WEBHOOK] Settings updated for project ${projectId} at ${updatedAt || new Date().toISOString()}`);
+    await redisDel(`settings:${projectId}`).catch(() => {});
+    await redisDel(`project:${projectId}:settings`).catch(() => {});
+    return { success: true, projectId };
+  });
+
+  // API Key Regenerated Webhook
+  server.post('/apikey-regenerated', { preHandler: verifyQStashSignature }, async (request, reply) => {
+    const { projectId } = request.body || {};
+    console.log(`[API WEBHOOK] API Key regenerated for project ${projectId}`);
+    await redisDel(`settings:${projectId}`).catch(() => {});
+    return { success: true, projectId };
+  });
+
+  // Widget Published Webhook
+  server.post('/widget-published', { preHandler: verifyQStashSignature }, async (request, reply) => {
+    const { projectId, publishedAt } = request.body || {};
+    console.log(`[API WEBHOOK] Widget published for project ${projectId} at ${publishedAt || new Date().toISOString()}`);
+    await redisDel(`widget_config:${projectId}`).catch(() => {});
+    return { success: true, projectId };
+  });
+
+  // Analytics Event Webhook
+  server.post('/analytics', { preHandler: verifyQStashSignature }, async (request, reply) => {
+    const { type, projectId, sessionId } = request.body || {};
+    console.log(`[API WEBHOOK] Analytics event '${type}' recorded for project ${projectId}, session ${sessionId}`);
+    return { success: true, type, projectId, sessionId };
+  });
 }

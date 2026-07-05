@@ -205,12 +205,12 @@ export default function ProjectOverviewPage({ params }) {
 
   if (!project) return null;
 
-  const baseUrl = typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:8080` : "http://localhost:8080";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || (typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:8080` : "http://localhost:8080");
   const widgetTokenToUse = project.widgetToken || "{API_TOKEN}";
 
   const scriptTag = `<script 
-  src="https://cdn.portfoliochat.dev/widget.js" 
-  data-token="{API_TOKEN}" 
+  src="${baseUrl}/v1/widget.js" 
+  data-token="${widgetTokenToUse}" 
   defer
 ></script>`;
 
@@ -394,11 +394,11 @@ console.log("AI Answer:", data.reply);`;
                   {"\n"}
                   {"  "}src=
                   <span className="text-accent-emerald">
-                    "https://cdn.portfoliochat.dev/widget.js"
+                    "{baseUrl}/v1/widget.js"
                   </span>
                   {"\n"}
                   {"  "}data-token=
-                  <span className="text-accent-emerald">"{"{API_TOKEN}"}"</span>
+                  <span className="text-accent-emerald">"{widgetTokenToUse}"</span>
                   {"\n"}
                   {"  "}
                   <span className="text-accent-pink">defer</span>
@@ -576,22 +576,24 @@ console.log("AI Answer:", data.reply);`;
         </div>
       </motion.div>
 
-      {/* Live Interactive API Tester / Playground */}
+      {/* Live API Tester */}
       <motion.div
         variants={item}
-        className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative"
+        className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative overflow-hidden"
       >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-accent-indigo/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
+
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-accent-indigo animate-pulse" />
             <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-              <md-icon className="text-accent-emerald">play_circle</md-icon>
+              <md-icon className="text-accent-indigo">play_circle</md-icon>
               Live API Tester
             </h2>
           </div>
           <p className="text-sm text-text-secondary">
             Test the{" "}
-            <code className="font-mono text-xs text-accent-emerald">
+            <code className="font-mono text-xs text-accent-indigo bg-accent-indigo/10 px-1.5 py-0.5 rounded border border-accent-indigo/20">
               POST /v1/chat/message
             </code>{" "}
             backend endpoint directly against this project's vectorized
@@ -605,13 +607,13 @@ console.log("AI Answer:", data.reply);`;
             value={playgroundQuery}
             onChange={(e) => setPlaygroundQuery(e.target.value)}
             placeholder="Type a test question for your portfolio knowledge base..."
-            className="flex-1 bg-bg-elevated border border-surface-border rounded-2xl px-5 py-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-emerald transition-all"
+            className="flex-1 bg-bg-elevated border border-surface-border rounded-2xl px-5 py-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-indigo transition-all shadow-inner"
             onKeyDown={(e) => e.key === "Enter" && handleRunPlaygroundTest()}
           />
           <button
             onClick={handleRunPlaygroundTest}
             disabled={playgroundLoading || !playgroundQuery.trim()}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-accent-emerald to-teal-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 shrink-0 shadow-lg shadow-accent-emerald/20"
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-accent-indigo to-cyan-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-95 hover:shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all active:scale-95 disabled:opacity-50 shrink-0 shadow-lg shadow-accent-indigo/20 cursor-pointer"
           >
             {playgroundLoading ? (
               <>
@@ -637,12 +639,12 @@ console.log("AI Answer:", data.reply);`;
               className="flex flex-col gap-4 pt-4 border-t border-surface-border"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono uppercase tracking-widest text-text-tertiary flex items-center gap-2">
+                <span className="text-xs font-mono uppercase tracking-widest text-text-tertiary flex items-center gap-2 font-semibold">
                   <md-icon style={{ fontSize: 16 }}>analytics</md-icon>
                   API Response Inspector
                 </span>
                 {playgroundLatency && (
-                  <span className="text-xs font-mono text-accent-emerald bg-accent-emerald/10 px-2.5 py-1 rounded-full border border-accent-emerald/20">
+                  <span className="text-xs font-mono text-accent-indigo bg-accent-indigo/10 px-3 py-1 rounded-full border border-accent-indigo/30 font-semibold">
                     Latency: {playgroundLatency}ms | Status 200 OK
                   </span>
                 )}
@@ -660,8 +662,8 @@ console.log("AI Answer:", data.reply);`;
               {playgroundResponse && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* AI Assistant Output */}
-                  <div className="bg-[#0b0b10] border border-surface-border rounded-2xl p-5 flex flex-col gap-3">
-                    <span className="text-xs font-mono uppercase tracking-wider text-accent-indigo flex items-center gap-1.5">
+                  <div className="bg-bg-elevated/80 border border-surface-border-strong rounded-2xl p-5 flex flex-col gap-3 shadow-inner">
+                    <span className="text-xs font-mono uppercase tracking-wider text-accent-indigo flex items-center gap-1.5 font-bold">
                       <md-icon style={{ fontSize: 16 }}>smart_toy</md-icon>
                       Generated AI Answer
                     </span>
@@ -669,12 +671,12 @@ console.log("AI Answer:", data.reply);`;
                   </div>
 
                   {/* Raw JSON Payload */}
-                  <div className="bg-[#0b0b10] border border-surface-border rounded-2xl p-5 flex flex-col gap-2 overflow-hidden">
-                    <span className="text-xs font-mono uppercase tracking-wider text-accent-purple flex items-center gap-1.5">
+                  <div className="bg-bg-elevated/80 border border-surface-border-strong rounded-2xl p-5 flex flex-col gap-2 overflow-hidden shadow-inner">
+                    <span className="text-xs font-mono uppercase tracking-wider text-accent-cyan flex items-center gap-1.5 font-bold">
                       <md-icon style={{ fontSize: 16 }}>data_object</md-icon>
-                      Raw JSON Output
+                      Raw JSON Response
                     </span>
-                    <pre className="font-mono text-[11px] text-purple-300 overflow-x-auto overflow-y-auto max-h-52 leading-relaxed">
+                    <pre className="font-mono text-[11px] text-cyan-200/90 overflow-x-auto overflow-y-auto max-h-60 leading-relaxed bg-[#09090d] p-3 rounded-xl border border-surface-border custom-scrollbar">
                       {JSON.stringify(playgroundResponse, null, 2)}
                     </pre>
                   </div>

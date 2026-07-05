@@ -40,7 +40,6 @@ async function triggerQStashEvent(destination, payload) {
 const ALLOWED_MODELS = [
   "openai/gpt-oss-120b",
   "openai/gpt-oss-20b",
-  "qwen/qwen3.6-27b",
 ];
 
 const ALLOWED_TONES = [

@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }) {
           className="text-[#666] dark:text-[#888] font-mono text-[11px] uppercase tracking-[0.2em] flex items-center gap-3"
         >
           <div className="w-4 h-4 rounded-full border border-black dark:border-white border-t-transparent animate-spin" />
-          Loading Command Center
+          Loading Project
         </motion.div>
       </div>
     );
