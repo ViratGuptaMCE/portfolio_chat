@@ -30,10 +30,11 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Modal state
+  // Modal & Error state
   const [showModal, setShowModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     async function loadProjects() {
@@ -60,9 +61,17 @@ export default function DashboardPage() {
       setShowModal(false);
       setNewProjectName("");
     } else {
-      alert("Failed to create project");
+      setErrorMessage(result.error || "Failed to create project");
     }
     setIsCreating(false);
+  };
+
+  const handleNewProjectClick = () => {
+    if (projects.length >= 2) {
+      setErrorMessage("Project limit reached. Each user account is allowed a maximum of 2 active projects.");
+    } else {
+      setShowModal(true);
+    }
   };
 
   return (
@@ -70,15 +79,26 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-10 max-w-5xl mx-auto w-full pt-8 px-4 md:px-0">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Projects</h1>
-            <p className="text-sm text-text-secondary font-mono tracking-tight">Manage and configure your intelligent widgets.</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold tracking-tight text-text-primary">Projects</h1>
+              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-accent-cyan/10 border border-accent-cyan/20 text-accent-cyan shrink-0">
+                {projects.length} / 2 Projects Used
+              </span>
+            </div>
+            <p className="text-sm text-text-secondary font-mono tracking-tight">
+              Manage and configure your intelligent widgets (Max 2 projects allowed per account).
+            </p>
           </div>
           <button
-            onClick={() => setShowModal(true)}
-            className="bg-accent-cyan hover:bg-accent-cyan-hover text-black font-semibold rounded-lg px-4 py-2 text-sm transition-all active:scale-[0.97] shadow-[0_0_15px_rgba(6,182,212,0.3)] flex items-center gap-2 cursor-pointer"
+            onClick={handleNewProjectClick}
+            className={`font-semibold rounded-lg px-4 py-2 text-sm transition-all flex items-center gap-2 cursor-pointer ${
+              projects.length >= 2
+                ? "bg-surface-border/60 text-text-tertiary border border-surface-border cursor-not-allowed hover:bg-surface-border/80"
+                : "bg-accent-cyan hover:bg-accent-cyan-hover text-black active:scale-[0.97] shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+            }`}
           >
-            <md-icon style={{ fontSize: 18 }}>add</md-icon>
-            New Project
+            <md-icon style={{ fontSize: 18 }}>{projects.length >= 2 ? "lock" : "add"}</md-icon>
+            {projects.length >= 2 ? "Limit Reached (2/2)" : "New Project"}
           </button>
         </header>
 
@@ -211,6 +231,58 @@ export default function DashboardPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Custom Glassmorphic Error Popup Modal */}
+      <AnimatePresence>
+        {errorMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/70 backdrop-blur-md"
+              onClick={() => setErrorMessage(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#0f0f15] border border-rose-500/30 rounded-3xl p-6 md:p-7 shadow-[0_20px_60px_rgba(244,63,94,0.2)] overflow-hidden flex flex-col gap-5 z-10"
+            >
+              {/* Subtle Glowing Background Aura */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 blur-[90px] rounded-full pointer-events-none -z-10 translate-x-1/2 -translate-y-1/2" />
+
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0 shadow-inner">
+                  <md-icon style={{ fontSize: 26 }}>error_outline</md-icon>
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-semibold text-white">
+                    Action Rejection
+                  </h3>
+                  <span className="text-[11px] font-mono text-rose-300 uppercase tracking-wider font-semibold">
+                    Limit Reached
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs md:text-sm text-text-secondary leading-relaxed bg-bg-elevated/60 border border-surface-border p-4 rounded-2xl">
+                {errorMessage}
+              </p>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  onClick={() => setErrorMessage(null)}
+                  className="px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-medium text-sm transition-all active:scale-95 shadow-lg shadow-rose-500/25 cursor-pointer"
+                >
+                  Got it
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

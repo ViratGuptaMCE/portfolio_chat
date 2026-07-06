@@ -30,6 +30,12 @@ export async function createProject(userId, name) {
   if (!userId || !name) throw new Error("Invalid input");
   
   try {
+    // Max 2 projects per user limit check
+    const userProjects = await db.select({ id: projects.id }).from(projects).where(eq(projects.userId, userId));
+    if (userProjects.length >= 2) {
+      return { success: false, error: "Project limit reached (Maximum 2 projects allowed per user account)." };
+    }
+
     // Generate a unique slug, widget token, and secret API key
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
     const widgetToken = 'pct_pub_' + crypto.randomBytes(16).toString('hex');
@@ -385,13 +391,13 @@ export async function getQuotaUsage(userId, projectId) {
         dailyUsed: dailyUsage.pdfUploadsCount || 0,
         dailyLimit: 10,
         chunksUsed: pdfChunksUsed,
-        chunksLimit: 200
+        chunksLimit: 25
       },
       knowledge: {
         dailyUsed: dailyUsage.knowledgeEntriesCount || 0,
         dailyLimit: 50,
         chunksUsed: knowledgeChunksUsed,
-        chunksLimit: 100
+        chunksLimit: 25
       },
       web: {
         dailyUsed: dailyUsage.urlImportsCount || 0,
@@ -399,7 +405,7 @@ export async function getQuotaUsage(userId, projectId) {
         urlsStored: urlsStoredCount,
         urlsLimit: 5,
         chunksUsed: webChunksUsed,
-        chunksLimit: 200
+        chunksLimit: 50
       }
     };
   } catch (error) {
