@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
-  transpilePackages: ["@portfoliochat/db", "better-auth/react"],
-  serverExternalPackages: ["drizzle-orm", "better-auth"],
+  transpilePackages: ["@portfoliochat/db"],
+  serverExternalPackages: ["drizzle-orm"],
 };
 
 export default nextConfig;
