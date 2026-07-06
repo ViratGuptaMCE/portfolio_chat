@@ -3,14 +3,15 @@ import crypto from 'crypto';
 
 export default async function (server) {
   server.post('/message', async (request, reply) => {
-    const authHeader = request.headers['authorization'];
+    const authHeader =
+      request.headers["authorization"] || request.headers["Authorization"];
     const customTokenHeader = request.headers['x-portfolio-token'] || request.headers['x-api-key'];
     
     let token = customTokenHeader;
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7).trim();
     }
-
+    
     const { projectId, apiKey, message, sessionId: incomingSessionId } = request.body || {};
     
     const finalApiKey = token || apiKey;
@@ -22,46 +23,37 @@ export default async function (server) {
       });
     }
 
-    if (!finalApiKey && !projectId) {
+    if (!finalApiKey) {
       return reply.status(401).send({
         success: false,
-        error: 'Missing API authentication: Provide X-Portfolio-Token header, Bearer token, or apiKey/projectId in request body.'
+        error: 'Unauthorized: Missing API authentication token. Provide X-Portfolio-Token header, Bearer token, or apiKey in request body.'
       });
     }
 
     try {
       // 1. Authenticate & Fetch Project from DB via SHA-256 Key Hash or Widget Token
-      let project = null;
-      
-      if (finalApiKey) {
-        const hashedKey = crypto.createHash('sha256').update(finalApiKey).digest('hex');
-        project = await db.query.projects.findFirst({
-          where: or(
-            eq(projects.apiKeyHash, hashedKey),
-            eq(projects.widgetToken, finalApiKey)
-          )
-        });
-      } else if (projectId) {
-        project = await db.query.projects.findFirst({
-          where: eq(projects.id, projectId)
-        });
-      }
+      console.log("\n\n\n\n", finalApiKey , "\n\n\n\n")
+      const hashedKey = crypto.createHash('sha256').update(finalApiKey).digest('hex');
+      const project = await db.query.projects.findFirst({
+        where: or(
+          eq(projects.apiKeyHash, hashedKey),
+          eq(projects.widgetToken, finalApiKey)
+        )
+      });
 
       if (!project) {
         return reply.status(401).send({
           success: false,
-          error: 'Unauthorized: Invalid API key or Project ID not found.'
+          error: 'Unauthorized: Invalid API key or token.'
         });
       }
 
-      if (projectId && finalApiKey) {
-        const hashedKey = crypto.createHash('sha256').update(finalApiKey).digest('hex');
-        if (project.id !== projectId || (project.apiKeyHash !== hashedKey && project.widgetToken !== finalApiKey)) {
-          return reply.status(401).send({
-            success: false,
-            error: 'Unauthorized: API Key does not match the provided Project ID.'
-          });
-        }
+      // If a specific projectId was also provided in body, strictly verify it matches the authenticated project
+      if (projectId && project.id !== projectId) {
+        return reply.status(401).send({
+          success: false,
+          error: 'Unauthorized: API Key does not match the provided Project ID.'
+        });
       }
 
       const activeProjectId = project.id;
@@ -118,7 +110,7 @@ export default async function (server) {
               if (!allowedDomainsList.includes(reqHost)) {
                 return reply.status(403).send({
                   success: false,
-                  error: `Forbidden: Widget embedding is not permitted on domain '${reqHost}'.`
+                  error: `Forbidden: Widget embedding is not permitted on domain '${reqHost}'. Either allow the domain in widget configuration or test in widget itself.`
                 });
               }
             }

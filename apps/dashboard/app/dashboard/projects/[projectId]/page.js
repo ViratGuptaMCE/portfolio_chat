@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "../../../../lib/auth-client";
 import { getProjectById, regenerateProjectApiKey } from "../../actions";
 import { useRouter } from "next/navigation";
+import ProjectSetupNotification from "./components/ProjectSetupNotification";
 
 if (typeof window !== "undefined") {
   import("@material/web/icon/icon.js");
@@ -297,6 +298,9 @@ console.log("AI Answer:", data.reply);`;
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Project Setup Requirement Notification Banner (Auto-hidden when fully configured) */}
+      <ProjectSetupNotification userId={session?.user?.id} projectId={projectId} />
 
       {/* Quick Stats */}
       <motion.div

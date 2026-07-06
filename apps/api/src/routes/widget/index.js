@@ -10,14 +10,9 @@ export default async function widgetRoutes(server) {
         return reply.status(400).send({ success: false, error: 'Missing widget token parameter' });
       }
 
-      // Safely check if token is UUID format to prevent Postgres invalid syntax errors
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
-
-      // Find project by widgetToken or ID
+      // Find project by widgetToken strictly (prevent raw Project ID UUID enumeration)
       const project = await db.query.projects.findFirst({
-        where: isUuid
-          ? (t, { eq, or }) => or(eq(t.widgetToken, token), eq(t.id, token))
-          : (t, { eq }) => eq(t.widgetToken, token)
+        where: (t, { eq }) => eq(t.widgetToken, token)
       });
 
       if (!project) {
@@ -45,7 +40,7 @@ export default async function widgetRoutes(server) {
             try { return new URL(d).hostname; } catch (e) { return d.replace(/^https?:\/\//, '').split('/')[0]; }
           });
 
-          if (!allowedDomainsList.includes(reqHost) && reqHost !== 'localhost' && reqHost !== '127.0.0.1') {
+          if (!allowedDomainsList.includes(reqHost)) {
             return reply.status(403).send({
               success: false,
               error: `Forbidden: Widget embedding is not permitted on domain '${reqHost}'.`

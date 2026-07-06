@@ -2,7 +2,7 @@
 
 import pdfParse from "pdf-parse";
 import crypto from "crypto";
-import { db, projects, knowledgeEntries, documents, websiteSources, userDailyUsage, redisGet, redisSet, redisDel } from "@portfoliochat/db";
+import { db, projects, projectSettings, widgetConfigs, knowledgeEntries, documents, websiteSources, userDailyUsage, redisGet, redisSet, redisDel } from "@portfoliochat/db";
 import { eq, and } from "drizzle-orm";
 
 export async function getUserProjects(userId) {
@@ -82,6 +82,37 @@ export async function getProjectById(userId, projectId) {
   } catch (error) {
     console.error("Error fetching project:", error);
     return null;
+  }
+}
+
+export async function getProjectSetupStatus(userId, projectId) {
+  if (!userId || !projectId) return { hasSettings: false, hasWidgetConfig: false, isFullyConfigured: false };
+
+  try {
+    const [project] = await db.select({ id: projects.id }).from(projects).where(
+      and(eq(projects.id, projectId), eq(projects.userId, userId))
+    );
+    if (!project) return { hasSettings: false, hasWidgetConfig: false, isFullyConfigured: false };
+
+    const [settingsRow] = await db.select({ id: projectSettings.id }).from(projectSettings).where(
+      eq(projectSettings.projectId, projectId)
+    );
+
+    const [widgetConfigRow] = await db.select({ id: widgetConfigs.id }).from(widgetConfigs).where(
+      eq(widgetConfigs.projectId, projectId)
+    );
+
+    const hasSettings = !!settingsRow;
+    const hasWidgetConfig = !!widgetConfigRow;
+
+    return {
+      hasSettings,
+      hasWidgetConfig,
+      isFullyConfigured: hasSettings && hasWidgetConfig
+    };
+  } catch (error) {
+    console.error("Error fetching project setup status:", error);
+    return { hasSettings: true, hasWidgetConfig: true, isFullyConfigured: true };
   }
 }
 
@@ -191,7 +222,7 @@ export async function getKnowledgeEntries(userId, projectId) {
 }
 
 async function triggerIngestionWebhook(payload) {
-  const apiUrl = "http://localhost:8080";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const qstashToken = process.env.QSTASH_TOKEN;
   const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
   const isLocalTarget = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
@@ -240,7 +271,7 @@ async function triggerIngestionWebhook(payload) {
 }
 
 async function triggerVectorDeletionWebhook(payload) {
-  const apiUrl = process.env.API_URL || "http://localhost:8080";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const qstashToken = process.env.QSTASH_TOKEN;
   const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
   const isLocalTarget =

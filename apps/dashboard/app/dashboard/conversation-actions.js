@@ -3,7 +3,7 @@
 import { db, projects, chatSessions, conversationMessages, eq, and, desc, asc, inArray, redisGet, redisSet, redisDel } from "@portfoliochat/db";
 
 async function triggerQStashEvent(destination, payload) {
-  const apiUrl = process.env.API_URL || "http://localhost:8080";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const qstashToken = process.env.QSTASH_TOKEN;
   const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
   const isLocalTarget = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
