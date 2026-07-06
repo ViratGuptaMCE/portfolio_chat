@@ -80,8 +80,9 @@ This project is structured as a Turborepo monorepo using **100% pure JavaScript 
 - **Interactive Transcript Modal ([ConversationDetailModal.js](file:///C:/port_ragbot/apps/dashboard/app/dashboard/projects/%5BprojectId%5D/conversations/components/ConversationDetailModal.js))**: Full chat transcript viewer with message bubbles, latency timing, expandable **Retrieved Context Sources** panel (vector chunks & similarity scores), flag toggles, and JSON/copy export actions.
 - **Non-Pastable Deletion Guard**: Manual session ID typing verification to prevent accidental conversation log deletion.
 
-### 4. Chatbot Customizer Studio Module (`apps/dashboard/app/dashboard/projects/[projectId]/customizer/`)
+### 4. Chatbot Customizer Studio & Standalone Embeddable Widget (`apps/dashboard/.../customizer/` & `apps/api/src/routes/widget/`)
 - **Split-Screen Studio Architecture**: Left-side 13-category settings studio panel + right-side real-time interactive widget preview canvas.
+- **Client-Side Markdown Formatting Engine**: Converts raw LLM output (`**bold**`, `- list items`, `1. numbered items`, `### headers`, `code`) into clean, sanitized HTML elements inside the standalone embedded `widget.js` Shadow DOM, live studio preview (`LiveWidgetPreview.js`), and conversation logs (`ConversationDetailModal.js`).
 - **Draft vs. Published State Machine**: Experiment freely in **Draft Mode** (`draft_config`) without affecting embedded live widgets until **Publish to Live** is clicked.
 - **6 One-Click Theme Presets**: *Minimal Dark*, *Clean Corporate*, *Frosted Glass*, *Cyber Neon*, *Playful Rounded*, and *Modern Slate*.
 - **13 Deep Customization Panels**: Appearance, Widget Launcher, Header, Welcome Experience, Layout & Bubbles, AI Personality (temperature slider & tone presets), Prompt Chips editor (max 6 chips), and Developer Embed & CSS settings.

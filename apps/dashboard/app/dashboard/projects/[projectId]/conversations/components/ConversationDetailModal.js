@@ -6,51 +6,90 @@ import { motion, AnimatePresence } from "framer-motion";
 function FormattedMarkdown({ content }) {
   if (!content) return null;
 
-  const blocks = content.split(/\n\n+/);
+  const rawLines = content.split('\n');
+  const elements = [];
+  let currentList = null;
+
+  const flushList = (keyPrefix) => {
+    if (!currentList) return null;
+    const isUl = currentList.type === 'ul';
+    const ListTag = isUl ? 'ul' : 'ol';
+    const listClass = isUl
+      ? 'list-disc list-inside flex flex-col gap-1 pl-1 my-1'
+      : 'list-decimal list-inside flex flex-col gap-1 pl-1 my-1';
+
+    const listEl = (
+      <ListTag key={`${keyPrefix}-list`} className={listClass}>
+        {currentList.items.map((itemText, iIdx) => (
+          <li key={iIdx}>{renderFormattedInline(itemText)}</li>
+        ))}
+      </ListTag>
+    );
+    currentList = null;
+    return listEl;
+  };
+
+  rawLines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      const flushed = flushList(index);
+      if (flushed) elements.push(flushed);
+      return;
+    }
+
+    const bulletMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+    if (bulletMatch) {
+      if (currentList && currentList.type !== 'ul') {
+        const flushed = flushList(index);
+        if (flushed) elements.push(flushed);
+      }
+      if (!currentList) {
+        currentList = { type: 'ul', items: [] };
+      }
+      currentList.items.push(bulletMatch[1]);
+      return;
+    }
+
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (numMatch) {
+      if (currentList && currentList.type !== 'ol') {
+        const flushed = flushList(index);
+        if (flushed) elements.push(flushed);
+      }
+      if (!currentList) {
+        currentList = { type: 'ol', items: [] };
+      }
+      currentList.items.push(numMatch[2]);
+      return;
+    }
+
+    const flushed = flushList(index);
+    if (flushed) elements.push(flushed);
+
+    const headerMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headerMatch) {
+      elements.push(
+        <div key={index} className="font-bold text-sm text-black dark:text-white mt-2 mb-1">
+          {renderFormattedInline(headerMatch[2])}
+        </div>
+      );
+      return;
+    }
+
+    elements.push(
+      <p key={index} className="my-0.5 whitespace-pre-wrap">
+        {renderFormattedInline(line)}
+      </p>
+    );
+  });
+
+  const flushedFinal = flushList('final');
+  if (flushedFinal) elements.push(flushedFinal);
 
   return (
-    <div className="flex flex-col gap-2 text-xs leading-relaxed text-black dark:text-[#eee]">
-      {blocks.map((block, bIdx) => {
-        const lines = block.split('\n').filter(Boolean);
-
-        // Check if block is a bullet list
-        const isBulletList = lines.length > 0 && lines.every(line => /^\s*[-*•]\s+/.test(line));
-        if (isBulletList) {
-          return (
-            <ul key={bIdx} className="list-disc list-inside flex flex-col gap-1 pl-1">
-              {lines.map((line, lIdx) => {
-                const cleanLine = line.replace(/^\s*[-*•]\s+/, '');
-                return <li key={lIdx}>{renderFormattedInline(cleanLine)}</li>;
-              })}
-            </ul>
-          );
-        }
-
-        // Check if block is a numbered list
-        const isNumberedList = lines.length > 0 && lines.every(line => /^\s*\d+\.\s+/.test(line));
-        if (isNumberedList) {
-          return (
-            <ol key={bIdx} className="list-decimal list-inside flex flex-col gap-1 pl-1">
-              {lines.map((line, lIdx) => {
-                const cleanLine = line.replace(/^\s*\d+\.\s+/, '');
-                return <li key={lIdx}>{renderFormattedInline(cleanLine)}</li>;
-              })}
-            </ol>
-          );
-        }
-
-        // Standard paragraph
-        return (
-          <p key={bIdx} className="whitespace-pre-wrap">
-            {lines.map((line, lIdx) => (
-              <React.Fragment key={lIdx}>
-                {renderFormattedInline(line)}
-                {lIdx < lines.length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </p>
-        );
-      })}
+    <div className="flex flex-col text-xs leading-relaxed text-black dark:text-[#eee]">
+      {elements}
     </div>
   );
 }
@@ -64,13 +103,13 @@ function renderFormattedInline(text) {
   return parts.map((part, i) => {
     if (!part) return null;
 
-    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
       return <strong key={i} className="font-bold text-black dark:text-white">{part.slice(2, -2)}</strong>;
     }
-    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+    if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
       return <em key={i} className="italic text-[#333] dark:text-[#ddd]">{part.slice(1, -1)}</em>;
     }
-    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+    if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
       return <code key={i} className="px-1.5 py-0.5 rounded bg-[#eaeaea] dark:bg-[#222] font-mono text-[11px] text-cyan-600 dark:text-cyan-400">{part.slice(1, -1)}</code>;
     }
     if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {

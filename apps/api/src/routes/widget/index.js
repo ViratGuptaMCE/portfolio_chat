@@ -266,15 +266,42 @@ export default async function widgetRoutes(server) {
     var launcherSide = (lnc.sidePadding !== undefined ? lnc.sidePadding : 24) + 'px';
     var isLeft = lnc.position === 'bottom-left';
 
-    // Bubbles & Theme Colors (100% matched with LayoutBubblePanel.js)
+    // Base & Computed Color/Theme Properties (100% Synced with LiveWidgetPreview.js)
+    var baseBg = themeMode === 'light' ? '#ffffff' : '#111113';
+    var baseText = themeMode === 'light' ? '#0f172a' : '#ffffff';
+    var baseBorder = themeMode === 'light' ? '#e2e8f0' : '#27272a';
+    var baseInputBg = themeMode === 'light' ? '#f8fafc' : '#18181b';
+
+    var computedBgHex = app.backgroundColor || baseBg;
+    var computedText = app.textColor || baseText;
+    var computedBorder = app.borderColor || baseBorder;
+    var computedInputBg = app.backgroundColor ? (app.backgroundColor + 'cc') : baseInputBg;
+
+    var hexToRgba = function(hex, opacityPercent) {
+      var cleanHex = String(hex || '').replace('#', '');
+      if (cleanHex.length === 3) {
+        cleanHex = cleanHex.split('').map(function(c) { return c + c; }).join('');
+      }
+      if (cleanHex.length !== 6) return hex;
+      var r = parseInt(cleanHex.substring(0, 2), 16);
+      var g = parseInt(cleanHex.substring(2, 4), 16);
+      var b = parseInt(cleanHex.substring(4, 6), 16);
+      var alpha = (opacityPercent !== undefined ? opacityPercent : 95) / 100;
+      return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+    };
+
+    var computedBg = hexToRgba(computedBgHex, app.backgroundOpacity);
+    var blurFilter = app.blurEffect ? 'blur(16px)' : 'none';
+    var fontSizePx = (app.fontSize || 14) + 'px';
+    var borderRadiusPx = (app.borderRadius !== undefined ? app.borderRadius : 16) + 'px';
+    var bubbleRadiusPx = (bbl.borderRadius !== undefined ? bbl.borderRadius : 14) + 'px';
+
     var userBg = bbl.userBg || primaryColor;
     var userText = bbl.userText || '#ffffff';
     var botBg = bbl.botBg || (themeMode === 'light' ? '#f1f5f9' : '#18181b');
-    var botText = bbl.botText || (themeMode === 'light' ? '#0f172a' : '#f4f4f5');
+    var botText = bbl.botText || (themeMode === 'light' ? '#0f172a' : computedText);
     var sendBtnColor = inp.sendColor || primaryColor;
     var placeholderText = inp.placeholder || 'Ask me anything...';
-    var borderRadiusPx = (app.borderRadius !== undefined ? app.borderRadius : 16) + 'px';
-    var bubbleRadiusPx = (bbl.borderRadius !== undefined ? bbl.borderRadius : 14) + 'px';
 
     // Shadow DOM Container Setup
     var containerDiv = document.createElement('div');
@@ -355,9 +382,11 @@ export default async function widgetRoutes(server) {
         height: \${lyt.height || 580}px;
         max-height: calc(100vh - 120px);
         border-radius: \${borderRadiusPx};
-        background: \${app.backgroundColor || (themeMode === 'light' ? '#ffffff' : '#111113')};
-        color: \${app.textColor || (themeMode === 'light' ? '#0f172a' : '#ffffff')};
-        border: 1px solid \${app.borderColor || (themeMode === 'light' ? '#e2e8f0' : 'rgba(255,255,255,0.12)')};
+        background: \${computedBg};
+        color: \${computedText};
+        border: 1px solid \${computedBorder};
+        backdrop-filter: \${blurFilter};
+        font-size: \${fontSizePx};
         box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         display: none;
         flex-direction: column;
@@ -374,6 +403,7 @@ export default async function widgetRoutes(server) {
         align-items: center;
         justify-content: space-between;
         color: #ffffff;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
       }
       .pc-header-left { display: flex; align-items: center; gap: 10px; }
       .pc-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -386,18 +416,26 @@ export default async function widgetRoutes(server) {
       
       .pc-msg { display: flex; flex-direction: column; max-width: 85%; font-size: 13px; line-height: 1.5; }
       .pc-msg-bot { align-self: flex-start; background: \${botBg}; color: \${botText}; padding: 12px; border-radius: \${bubbleRadiusPx}; border-top-left-radius: 4px; border: 1px solid rgba(255,255,255,0.06); }
+      .pc-msg-bot ul, .pc-msg-bot ol { margin: 4px 0; padding-left: 18px; }
+      .pc-msg-bot li { margin-bottom: 3px; }
+      .pc-msg-bot p { margin: 2px 0; }
+      .pc-msg-bot a { color: inherit; text-decoration: underline; font-weight: 500; }
+      .pc-msg-bot code { padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,0.12); font-family: monospace; font-size: 0.88em; }
+      .pc-msg-bot strong { font-weight: 700; }
       .pc-msg-user { align-self: flex-end; background: \${userBg}; color: \${userText}; padding: 12px; border-radius: \${bubbleRadiusPx}; border-top-right-radius: 4px; }
 
-      .pc-subgreeting { padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; font-size: 12px; opacity: 0.9; }
+      .pc-subgreeting { padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid \${computedBorder}; border-radius: 16px; font-size: 12px; opacity: 0.9; line-height: 1.6; }
 
-      .pc-chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px; border-top: 1px solid rgba(255,255,255,0.06); }
-      .pc-chip { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; padding: 6px 12px; font-size: 11px; color: #a1a1aa; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
-      .pc-chip:hover { background: rgba(255,255,255,0.15); color: #ffffff; }
+      .pc-chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 14px; border-top: 1px solid \${computedBorder}; flex-shrink: 0; }
+      .pc-chip { background: \${themeMode === 'light' ? '#f1f5f9' : 'rgba(255, 255, 255, 0.08)'}; border: 1px solid \${computedBorder}; border-radius: 9999px; padding: 4px 12px; font-size: 11px; font-weight: 500; color: \${computedText}; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+      .pc-chip:hover { opacity: 0.8; }
 
-      .pc-footer { padding: 12px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 8px; background: \${themeMode === 'light' ? '#f8fafc' : '#09090b'}; }
-      .pc-input { flex: 1; background: \${themeMode === 'light' ? '#ffffff' : '#18181b'}; border: 1px solid \${themeMode === 'light' ? '#cbd5e1' : 'rgba(255,255,255,0.15)'}; border-radius: 20px; padding: 10px 14px; color: \${app.textColor || (themeMode === 'light' ? '#0f172a' : '#ffffff')}; font-size: 13px; outline: none; }
-      .pc-input:focus { border-color: \${primaryColor}; }
-      .pc-send-btn { width: 38px; height: 38px; border-radius: 50%; background: \${sendBtnColor}; border: none; color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+      .pc-footer { padding: 12px; border-top: 1px solid \${computedBorder}; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+      .pc-input { flex: 1; background: \${computedInputBg}; border: 1px solid \${computedBorder}; border-radius: 12px; padding: 8px 14px; color: \${computedText}; font-size: 12px; outline: none; }
+      .pc-input:focus { opacity: 0.9; }
+      .pc-send-btn { width: 32px; height: 32px; border-radius: 12px; background: \${sendBtnColor}; border: none; color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s ease; flex-shrink: 0; }
+      .pc-send-btn:hover { transform: scale(1.05); }
+      .pc-send-btn:active { transform: scale(0.95); }
       .pc-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
       \${devCfg.customCss || ''}
@@ -497,6 +535,153 @@ export default async function widgetRoutes(server) {
       });
     }
 
+    // Markdown Parser Helper for Widget Bot Messages
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function parseInline(text) {
+      if (!text) return '';
+      var escaped = escapeHtml(text);
+      
+      var parts = escaped.split(String.fromCharCode(96));
+      if (parts.length > 1) {
+        var res = [];
+        for (var i = 0; i < parts.length; i++) {
+          if (i % 2 === 1) {
+            res.push('<code style="padding:2px 5px;border-radius:4px;background:rgba(255,255,255,0.12);font-family:monospace;font-size:0.88em;">' + parts[i] + '</code>');
+          } else {
+            res.push(parts[i]);
+          }
+        }
+        escaped = res.join('');
+      }
+
+      parts = escaped.split('**');
+      if (parts.length > 1) {
+        var resB = [];
+        for (var j = 0; j < parts.length; j++) {
+          if (j % 2 === 1) {
+            resB.push('<strong>' + parts[j] + '</strong>');
+          } else {
+            resB.push(parts[j]);
+          }
+        }
+        escaped = resB.join('');
+      }
+
+      parts = escaped.split('*');
+      if (parts.length > 1) {
+        var resI = [];
+        for (var k = 0; k < parts.length; k++) {
+          if (k % 2 === 1) {
+            resI.push('<em>' + parts[k] + '</em>');
+          } else {
+            resI.push(parts[k]);
+          }
+        }
+        escaped = resI.join('');
+      }
+
+      parts = escaped.split('[');
+      if (parts.length > 1) {
+        var resL = [parts[0]];
+        for (var l = 1; l < parts.length; l++) {
+          var p = parts[l];
+          var closeIdx = p.indexOf('](');
+          var endParen = p.indexOf(')', closeIdx);
+          if (closeIdx !== -1 && endParen !== -1) {
+            var linkText = p.substring(0, closeIdx);
+            var linkUrl = p.substring(closeIdx + 2, endParen).trim();
+            var rest = p.substring(endParen + 1);
+            if (linkUrl.indexOf('http://') !== 0 && linkUrl.indexOf('https://') !== 0 && linkUrl.indexOf('mailto:') !== 0 && linkUrl.indexOf('/') !== 0) {
+              linkUrl = 'https://' + linkUrl;
+            }
+            resL.push('<a href="' + linkUrl + '" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">' + linkText + '</a>' + rest);
+          } else {
+            resL.push('[' + p);
+          }
+        }
+        escaped = resL.join('');
+      }
+
+      return escaped;
+    }
+
+    function parseMarkdownToHtml(content) {
+      if (!content) return '';
+      var lines = String(content).split(String.fromCharCode(10));
+      var htmlResult = [];
+      var inList = null;
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trimRight();
+        var trimmed = line.trim();
+
+        if (!trimmed) {
+          if (inList) {
+            htmlResult.push(inList === 'ul' ? '</ul>' : '</ol>');
+            inList = null;
+          }
+          continue;
+        }
+
+        if (trimmed.indexOf('#') === 0) {
+          if (inList) {
+            htmlResult.push(inList === 'ul' ? '</ul>' : '</ol>');
+            inList = null;
+          }
+          var hText = trimmed.replace(/^#+[ \t]*/, '');
+          htmlResult.push('<div style="font-weight:700;font-size:1.05em;margin-top:6px;margin-bottom:4px;">' + parseInline(hText) + '</div>');
+          continue;
+        }
+
+        if (trimmed.indexOf('- ') === 0 || trimmed.indexOf('* ') === 0 || trimmed.indexOf('• ') === 0) {
+          if (inList !== 'ul') {
+            if (inList === 'ol') htmlResult.push('</ol>');
+            htmlResult.push('<ul style="margin:4px 0;padding-left:18px;list-style-type:disc;">');
+            inList = 'ul';
+          }
+          htmlResult.push('<li style="margin-bottom:3px;">' + parseInline(trimmed.substring(2)) + '</li>');
+          continue;
+        }
+
+        var isNum = false;
+        var dotIdx = trimmed.indexOf('. ');
+        if (dotIdx > 0 && dotIdx < 4) {
+          var numPrefix = trimmed.substring(0, dotIdx);
+          if (!isNaN(numPrefix)) {
+            isNum = true;
+            if (inList !== 'ol') {
+              if (inList === 'ul') htmlResult.push('</ul>');
+              htmlResult.push('<ol style="margin:4px 0;padding-left:18px;list-style-type:decimal;">');
+              inList = 'ol';
+            }
+            htmlResult.push('<li style="margin-bottom:3px;">' + parseInline(trimmed.substring(dotIdx + 2)) + '</li>');
+          }
+        }
+
+        if (!isNum) {
+          if (inList) {
+            htmlResult.push(inList === 'ul' ? '</ul>' : '</ol>');
+            inList = null;
+          }
+          htmlResult.push('<div style="margin-bottom:4px;">' + parseInline(trimmed) + '</div>');
+        }
+      }
+
+      if (inList) {
+        htmlResult.push(inList === 'ul' ? '</ul>' : '</ol>');
+      }
+
+      return htmlResult.join('');
+    }
+
     function sendUserMessage(text) {
       var query = text || inputEl.value;
       if (!query || !query.trim()) return;
@@ -514,7 +699,7 @@ export default async function widgetRoutes(server) {
       // Append Typing Placeholder
       var typingDiv = document.createElement('div');
       typingDiv.className = 'pc-msg pc-msg-bot';
-      typingDiv.textContent = 'Thinking...';
+      typingDiv.textContent = 'Replying...';
       messagesEl.appendChild(typingDiv);
       messagesEl.scrollTop = messagesEl.scrollHeight;
 
@@ -535,9 +720,9 @@ export default async function widgetRoutes(server) {
       .then(function(resData) {
         sendBtn.disabled = false;
         if (resData.success && resData.reply) {
-          typingDiv.textContent = resData.reply;
+          typingDiv.innerHTML = parseMarkdownToHtml(resData.reply);
         } else {
-          typingDiv.textContent = resData.error || 'Unable to get response. Please try again.';
+          typingDiv.innerHTML = parseMarkdownToHtml(resData.error || 'Unable to get response. Please try again.');
         }
         messagesEl.scrollTop = messagesEl.scrollHeight;
       })
