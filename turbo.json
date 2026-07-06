@@ -1,5 +1,30 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DATABASE_URL",
+    "NEON_AUTH_BASE_URL",
+    "NEON_AUTH_COOKIE_SECRET",
+    "BETTER_AUTH_URL",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "UPSTASH_REDIS_REST_PORT",
+    "REDIS_URL",
+    "QSTASH_URL",
+    "QSTASH_TOKEN",
+    "QSTASH_CURRENT_SIGNING_KEY",
+    "QSTASH_NEXT_SIGNING_KEY",
+    "QDRANT_URL",
+    "QDRANT_API_KEY",
+    "GEMINI_API_KEY",
+    "GROQ_API_KEY",
+    "CLOUDFLARE_WORKER_URL",
+    "CLOUDFLARE_WORKER_AUTH_TOKEN",
+    "ENCRYPTION_KEY",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASS"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
