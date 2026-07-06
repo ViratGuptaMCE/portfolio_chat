@@ -31,6 +31,10 @@ server.get('/health', async (request, reply) => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
 
+server.head('/health', async (request, reply) => {
+  return reply.status(200).send();
+});
+
 const start = async () => {
   try {
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
