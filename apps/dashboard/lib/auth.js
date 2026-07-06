@@ -17,8 +17,7 @@ const transporter = nodemailer.createTransport({
 
 const sendEmailAsync = async (to, subject, html) => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("[MAILER WARNING] SMTP credentials not set. Email not sent.");
-    return;
+    throw new Error("SMTP credentials are not configured on the server. Email could not be sent.");
   }
   try {
     await transporter.sendMail({
@@ -29,7 +28,7 @@ const sendEmailAsync = async (to, subject, html) => {
     });
     console.log(`[MAILER] Successfully sent email to ${to}`);
   } catch (err) {
-    console.error(`[MAILER ERROR] Failed to send email to ${to}:`, err);
+    throw new Error("Failed to send email. Please check server configuration or logs.");
   }
 };
 
@@ -48,8 +47,7 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url, token }) => {
-      console.log(`\n\n[RESET PASSWORD URL] for ${user.email}:\n${url}\n\n`);
-      sendEmailAsync(
+      await sendEmailAsync(
         user.email,
         "Reset your PortfolioChat Password",
         `
@@ -59,15 +57,14 @@ export const auth = betterAuth({
           <a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #111; color: #fff; text-decoration: none; border-radius: 8px; margin-top: 16px;">Reset Password</a>
         </div>
         `
-      ).catch(console.error);
+      );
     },
   },
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
       console.log(`\n\n[VERIFICATION URL] for ${user.email}:\n${url}\n\n`);
-      // Fire and forget to avoid blocking signup request
-      sendEmailAsync(
+      await sendEmailAsync(
         user.email,
         "Verify your PortfolioChat Account",
         `
@@ -77,7 +74,7 @@ export const auth = betterAuth({
           <a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #111; color: #fff; text-decoration: none; border-radius: 8px; margin-top: 16px;">Verify Email</a>
         </div>
         `
-      ).catch(console.error);
+      );
     },
   },
   socialProviders: {
@@ -90,7 +87,7 @@ export const auth = betterAuth({
     magicLink({
       sendMagicLink: async ({ email, url }) => {
         console.log(`\n\n[MAGIC LINK URL] for ${email}:\n${url}\n\n`);
-        sendEmailAsync(
+        await sendEmailAsync(
           email,
           "Sign in to PortfolioChat",
           `
@@ -100,7 +97,7 @@ export const auth = betterAuth({
             <a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #111; color: #fff; text-decoration: none; border-radius: 8px; margin-top: 16px;">Sign In</a>
           </div>
           `
-        ).catch(console.error);
+        );
       }
     })
   ]
