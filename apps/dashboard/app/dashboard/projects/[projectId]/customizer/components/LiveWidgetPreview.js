@@ -37,7 +37,7 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
     const botMsg = {
       id: Date.now() + 1,
       role: "assistant",
-      content: "This is a live test preview response demonstrating real-time styling, colors, font family, and prompt chip interaction."
+      content: "This is a live test preview response. Don't worry you will see actual response when embeded."
     };
 
     setCustomTestMessages((prev) => [...prev, userMsg, botMsg]);
@@ -90,8 +90,8 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
     if (styleKey === "solid") {
       return { backgroundColor: header.customBgColor || primaryColor };
     }
-    if (styleKey === "gradient-indigo") {
-      return { backgroundImage: "linear-gradient(135deg, #6366f1, #8b5cf6)" };
+    if (styleKey === "gradient-cyan" || styleKey === "gradient-indigo") {
+      return { backgroundImage: "linear-gradient(135deg, #06b6d4, #0891b2)" };
     }
     if (styleKey === "gradient-blue") {
       return { backgroundImage: "linear-gradient(135deg, #0284c7, #06b6d4)" };
@@ -172,9 +172,9 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
             }`}
           >
             <span className="material-symbols-outlined text-base">desktop_windows</span>
-            Desktop View
+            Live View
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={() => setDeviceFrame("mobile")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -185,7 +185,7 @@ export default function LiveWidgetPreview({ draftConfig, project }) {
           >
             <span className="material-symbols-outlined text-base">smartphone</span>
             Mobile Frame
-          </button>
+          </button> */}
         </div>
 
         <div className="flex items-center gap-2">

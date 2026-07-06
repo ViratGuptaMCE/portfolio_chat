@@ -76,6 +76,9 @@ export default function KnowledgeBasePage({ params }) {
   // Expanded Content Card IDs
   const [expandedCardIds, setExpandedCardIds] = useState({});
 
+  // Poll Counter Ref to prevent infinite polling loops
+  const pollCountRef = useRef(0);
+
   const loadData = async (silent = false) => {
     if (!session?.user?.id) return;
     if (!silent) setLoading(true);
@@ -97,20 +100,33 @@ export default function KnowledgeBasePage({ params }) {
   }, [session?.user?.id, projectId]);
 
   // Real-time polling when any item is in 'processing' / 'pending' / 'scraping' status
-  const hasProcessingItem = 
-    documents.some(doc => doc.status === 'processing' || doc.status === 'pending' || doc.status === 'scraping') ||
-    entries.some(entry => entry.status === 'processing' || entry.status === 'pending' || entry.status === 'scraping') ||
-    websites.some(web => web.status === 'processing' || web.status === 'pending' || web.status === 'scraping');
+  const hasProcessingDocs = documents.some(doc => doc.status === 'processing' || doc.status === 'pending');
+  const hasProcessingEntries = entries.some(entry => entry.status === 'processing' || entry.status === 'pending');
+  const hasProcessingWebsites = websites.some(web => web.status === 'processing' || web.status === 'pending' || web.status === 'scraping');
+  const hasProcessingItem = hasProcessingDocs || hasProcessingEntries || hasProcessingWebsites;
 
   useEffect(() => {
-    if (!hasProcessingItem) return;
+    if (!hasProcessingItem || !session?.user?.id) {
+      pollCountRef.current = 0;
+      return;
+    }
 
-    const interval = setInterval(() => {
-      loadData(true);
-    }, 1200);
+    // Polling interval of 4 seconds with max 12 attempts (48 seconds max total cap)
+    const interval = setInterval(async () => {
+      pollCountRef.current += 1;
+
+      // Targeted polling: only poll the specific resource type currently in-progress
+      const tasks = [];
+      if (hasProcessingDocs) tasks.push(getDocuments(session.user.id, projectId).then(docs => docs && setDocuments(docs)));
+      if (hasProcessingEntries) tasks.push(getKnowledgeEntries(session.user.id, projectId).then(ents => ents && setEntries(ents)));
+      if (hasProcessingWebsites) tasks.push(getWebsiteSources(session.user.id, projectId).then(webs => webs && setWebsites(webs)));
+      tasks.push(getQuotaUsage(session.user.id, projectId).then(q => q && setQuota(q)));
+
+      await Promise.all(tasks);
+    }, 4000);
 
     return () => clearInterval(interval);
-  }, [hasProcessingItem, session?.user?.id, projectId]);
+  }, [hasProcessingDocs, hasProcessingEntries, hasProcessingWebsites, session?.user?.id, projectId]);
 
   // Handlers
   const handleFileUpload = async (e) => {

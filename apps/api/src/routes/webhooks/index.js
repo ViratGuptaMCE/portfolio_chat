@@ -69,43 +69,44 @@ export default async function (server) {
         const chunks = await splitter.createDocuments([formattedText]);
         const chunkTexts = chunks.map(c => c.pageContent);
 
-        console.log(`[API INGEST] Knowledge entry "${entry.title}" split into ${chunks.length} chunks.`);
+        console.log(`[API INGEST] Knowledge entry "${entry.title}" split into ${chunks.length} chunks. Pushing vector embeddings to Cloudflare Vectorize...`);
 
+        // Strictly await vector chunk embeddings at Cloudflare Worker
         if (cfWorkerUrl && cfToken) {
-          for (let i = 0; i < chunkTexts.length; i++) {
-            const res = await fetch(`${cfWorkerUrl}/embed`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${cfToken}`
-              },
-              body: JSON.stringify({
-                text: chunkTexts[i],
-                documentId: entryId,
-                entryId,
-                projectId,
-                category: entry.category,
-                tags: entry.tags,
-                chunkIndex: i
+          await Promise.all(
+            chunkTexts.map((text, i) =>
+              fetch(`${cfWorkerUrl}/embed`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${cfToken}`
+                },
+                body: JSON.stringify({
+                  text,
+                  documentId: entryId,
+                  entryId,
+                  projectId,
+                  category: entry.category,
+                  tags: entry.tags,
+                  chunkIndex: i
+                })
+              }).then(async (res) => {
+                if (!res.ok) {
+                  const errText = await res.text();
+                  throw new Error(`Cloudflare Vectorize embedding failed (${res.status}): ${errText}`);
+                }
               })
-            });
-            if (!res.ok) {
-              const errMsg = await res.text();
-              console.error(`[API INGEST ERROR] Knowledge chunk embedding failed (${res.status}): ${errMsg}`);
-            } else {
-              console.log(`[API INGEST EMBEDDED] Knowledge chunk ${i + 1}/${chunkTexts.length} embedded at Cloudflare Worker.`);
-            }
-          }
+            )
+          );
         }
 
+        // Mark as 'ready' ONLY after vector embeddings are fully stored in Vectorize
         await db.update(knowledgeEntries)
           .set({ status: 'ready', chunkCount: chunks.length, updatedAt: new Date() })
           .where(eq(knowledgeEntries.id, entryId));
-
-        // Immediately invalidate Redis cache so UI polling receives updated 'ready' status
         await redisDel(`knowledge:${projectId}`);
 
-        console.log(`[API INGEST COMPLETE] Knowledge entry ${entryId} status set to 'ready'. Redis cache invalidated.`);
+        console.log(`[API INGEST SUCCESS] Knowledge entry ${entryId} embedded in Cloudflare Vectorize. Status set to 'ready'.`);
         return { success: true, type: 'knowledge_entry', id: entryId, chunks: chunks.length };
       }
 
@@ -122,39 +123,43 @@ export default async function (server) {
         const chunks = await splitter.createDocuments([doc.extractedText]);
         const chunkTexts = chunks.map(c => c.pageContent);
 
-        console.log(`[API INGEST] Document "${doc.fileName}" split into ${chunks.length} chunks.`);
+        console.log(`[API INGEST] Document "${doc.fileName}" split into ${chunks.length} chunks. Pushing vector embeddings to Cloudflare Vectorize...`);
 
+        // Strictly await vector chunk embeddings at Cloudflare Worker
         if (cfWorkerUrl && cfToken) {
-          for (let i = 0; i < chunkTexts.length; i++) {
-            const res = await fetch(`${cfWorkerUrl}/embed`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${cfToken}`
-              },
-              body: JSON.stringify({
-                text: chunkTexts[i],
-                documentId,
-                projectId,
-                category: 'document',
-                tags: [doc.fileType || 'pdf'],
-                chunkIndex: i
+          await Promise.all(
+            chunkTexts.map((text, i) =>
+              fetch(`${cfWorkerUrl}/embed`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${cfToken}`
+                },
+                body: JSON.stringify({
+                  text,
+                  documentId,
+                  projectId,
+                  category: 'document',
+                  tags: [doc.fileType || 'pdf'],
+                  chunkIndex: i
+                })
+              }).then(async (res) => {
+                if (!res.ok) {
+                  const errText = await res.text();
+                  throw new Error(`Cloudflare Vectorize embedding failed (${res.status}): ${errText}`);
+                }
               })
-            });
-            if (!res.ok) {
-              console.error(`[API INGEST ERROR] Document chunk embedding failed: ${await res.text()}`);
-            }
-          }
+            )
+          );
         }
 
+        // Mark as 'ready' ONLY after vector embeddings are fully stored in Vectorize
         await db.update(documents)
           .set({ status: 'ready', chunkCount: chunks.length, updatedAt: new Date() })
           .where(eq(documents.id, documentId));
-
-        // Immediately invalidate Redis cache so UI polling receives updated 'ready' status
         await redisDel(`documents:${projectId}`);
 
-        console.log(`[API INGEST COMPLETE] Document ${documentId} status set to 'ready'. Redis cache invalidated.`);
+        console.log(`[API INGEST SUCCESS] Document ${documentId} embedded in Cloudflare Vectorize. Status set to 'ready'.`);
         return { success: true, type: 'document', id: documentId, chunks: chunks.length };
       }
 
@@ -228,38 +233,43 @@ export default async function (server) {
         const chunks = await splitter.createDocuments([formattedText]);
         const chunkTexts = chunks.map(c => c.pageContent);
 
-        console.log(`[API INGEST] Website "${title}" split into ${chunks.length} chunks.`);
+        console.log(`[API INGEST] Website "${title}" split into ${chunks.length} chunks. Pushing vector embeddings to Cloudflare Vectorize...`);
 
+        // Strictly await vector chunk embeddings at Cloudflare Worker
         if (cfWorkerUrl && cfToken) {
-          for (let i = 0; i < chunkTexts.length; i++) {
-            const res = await fetch(`${cfWorkerUrl}/embed`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${cfToken}`
-              },
-              body: JSON.stringify({
-                text: chunkTexts[i],
-                documentId: websiteId,
-                projectId,
-                category: 'website',
-                tags: ['url'],
-                chunkIndex: i
+          await Promise.all(
+            chunkTexts.map((text, i) =>
+              fetch(`${cfWorkerUrl}/embed`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${cfToken}`
+                },
+                body: JSON.stringify({
+                  text,
+                  documentId: websiteId,
+                  projectId,
+                  category: 'website',
+                  tags: ['url'],
+                  chunkIndex: i
+                })
+              }).then(async (res) => {
+                if (!res.ok) {
+                  const errText = await res.text();
+                  throw new Error(`Cloudflare Vectorize embedding failed (${res.status}): ${errText}`);
+                }
               })
-            });
-            if (!res.ok) {
-              console.error(`[API INGEST ERROR] Website chunk embedding failed: ${await res.text()}`);
-            }
-          }
+            )
+          );
         }
 
+        // Mark as 'ready' ONLY after vector embeddings are fully stored in Vectorize
         await db.update(websiteSources)
           .set({ title, extractedText, status: 'ready', chunkCount: chunks.length, updatedAt: new Date() })
           .where(eq(websiteSources.id, websiteId));
-
         await redisDel(`website_sources:${projectId}`);
 
-        console.log(`[API INGEST COMPLETE] Website ${websiteId} status set to 'ready'. Redis cache invalidated.`);
+        console.log(`[API INGEST SUCCESS] Website ${websiteId} embedded in Cloudflare Vectorize. Status set to 'ready'.`);
         return { success: true, type: 'website', id: websiteId, chunks: chunks.length };
       }
 

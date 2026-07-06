@@ -37,7 +37,7 @@ function FormattedMarkdown({ content }) {
       }
       if (part.startsWith("`") && part.endsWith("`")) {
         return (
-          <code key={index} className="font-mono text-xs bg-surface-border px-1.5 py-0.5 rounded text-accent-indigo">
+          <code key={index} className="font-mono text-xs bg-surface-border px-1.5 py-0.5 rounded text-accent-cyan">
             {part.slice(1, -1)}
           </code>
         );
@@ -56,7 +56,7 @@ function FormattedMarkdown({ content }) {
         if (numMatch) {
           return (
             <div key={idx} className="flex items-start gap-2.5 ml-1">
-              <span className="font-mono text-xs text-accent-indigo font-semibold shrink-0 mt-0.5">
+              <span className="font-mono text-xs text-accent-cyan font-semibold shrink-0 mt-0.5">
                 {numMatch[1]}.
               </span>
               <span className="flex-1">{parseInline(numMatch[2])}</span>
@@ -197,7 +197,7 @@ export default function ProjectOverviewPage({ params }) {
   if (loading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center gap-4 text-text-secondary">
-        <div className="w-6 h-6 rounded-full border-2 border-accent-indigo border-t-transparent animate-spin" />
+        <div className="w-6 h-6 rounded-full border-2 border-accent-cyan border-t-transparent animate-spin" />
         <p className="text-sm font-mono uppercase tracking-widest">Loading Command Center...</p>
       </div>
     );
@@ -323,7 +323,7 @@ console.log("AI Answer:", data.reply);`;
             label: "LLM Provider",
             value: project.llmModel || "groq/openai/gpt-oss-120b",
             icon: "psychology",
-            color: "text-accent-indigo",
+            color: "text-accent-cyan",
           },
         ].map((stat, i) => (
           <div
@@ -357,63 +357,84 @@ console.log("AI Answer:", data.reply);`;
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent-indigo/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
 
           <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-              <md-icon className="text-accent-indigo">web</md-icon>
-              Public Widget Token
-            </h2>
-            <p className="text-sm text-text-secondary">
-              Embed this publishable token on public sites for the drop-in
-              chatbot widget.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
-                Public Token Value
-              </label>
-              <div className="bg-bg-elevated border border-surface-border rounded-xl px-4 py-2.5 font-mono text-xs text-accent-indigo flex items-center justify-between">
-                <span className="truncate">{widgetTokenToUse}</span>
-                <button
-                  onClick={() => copyToClipboard(widgetTokenToUse, "pubToken")}
-                  className="text-text-tertiary hover:text-white transition-colors p-1"
-                  title="Copy Public Token"
-                >
-                  <md-icon style={{ fontSize: 16 }}>
-                    {copiedField === "pubToken" ? "check" : "content_copy"}
-                  </md-icon>
-                </button>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent-cyan/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <md-icon className="text-accent-cyan">web</md-icon>
+                <h2 className="text-xl font-semibold text-text-primary">
+                  Quickstart: Standard Embed Widget
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-accent-emerald animate-pulse" />
+                <span className="text-xs text-accent-emerald font-mono uppercase tracking-wider font-semibold">
+                  Status: Published
+                </span>
               </div>
             </div>
 
-            <div className="relative group mt-1">
-              <div className="absolute -inset-1 bg-gradient-to-r from-accent-indigo/20 to-accent-purple/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-500" />
-              <div className="relative bg-[#0d0d12] border border-surface-border-strong rounded-xl p-4 overflow-hidden">
-                <pre className="font-mono text-[13px] text-text-secondary overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
-                  <span className="text-accent-pink">&lt;script</span>
-                  {"\n"}
-                  {"  "}src=
-                  <span className="text-accent-emerald">
-                    "{baseUrl}/v1/widget.js"
-                  </span>
-                  {"\n"}
-                  {"  "}data-token=
-                  <span className="text-accent-emerald">"{widgetTokenToUse}"</span>
-                  {"\n"}
-                  {"  "}
-                  <span className="text-accent-pink">defer</span>
-                  {"\n"}
-                  <span className="text-accent-pink">&gt;&lt;/script&gt;</span>
-                </pre>
-                <button
-                  onClick={() => copyToClipboard(scriptTag, "script")}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-surface-glass border border-surface-border flex items-center justify-center hover:bg-surface-border/80 text-text-secondary hover:text-white transition-all active:scale-95"
-                  title="Copy Script"
-                >
-                  <md-icon style={{ fontSize: 16 }}>
-                    {copiedField === "script" ? "check" : "content_copy"}
-                  </md-icon>
-                </button>
+            <p className="text-sm text-text-secondary">
+              Copy and paste this HTML snippet directly before the closing{" "}
+              <code className="font-mono text-xs text-accent-cyan bg-bg-elevated px-1.5 py-0.5 rounded border border-surface-border">
+                &lt;/body&gt;
+              </code>{" "}
+              tag of any website or portfolio.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
+                  Public Token Value
+                </label>
+                <div className="bg-bg-elevated border border-surface-border rounded-xl px-4 py-2.5 font-mono text-xs text-accent-cyan flex items-center justify-between">
+                  <span className="truncate">{widgetTokenToUse}</span>
+                  <button
+                    onClick={() =>
+                      copyToClipboard(widgetTokenToUse, "pubToken")
+                    }
+                    className="text-text-tertiary hover:text-white transition-colors p-1"
+                    title="Copy Public Token"
+                  >
+                    <md-icon style={{ fontSize: 16 }}>
+                      {copiedField === "pubToken" ? "check" : "content_copy"}
+                    </md-icon>
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative group mt-1">
+                <div className="absolute -inset-1 bg-gradient-to-r from-accent-cyan/20 to-cyan-500/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-500" />
+                <div className="relative bg-[#0d0d12] border border-surface-border-strong rounded-xl p-4 overflow-hidden">
+                  <pre className="font-mono text-[13px] text-text-secondary overflow-x-auto whitespace-pre-wrap break-all leading-relaxed">
+                    <span className="text-accent-pink">&lt;script</span>
+                    {"\n"}
+                    {"  "}src=
+                    <span className="text-accent-emerald">
+                      "{baseUrl}/v1/widget.js"
+                    </span>
+                    {"\n"}
+                    {"  "}data-token=
+                    <span className="text-accent-emerald">
+                      "{widgetTokenToUse}"
+                    </span>
+                    {"\n"}
+                    {"  "}
+                    <span className="text-accent-pink">defer</span>
+                    {"\n"}
+                    <span className="text-accent-pink">
+                      &gt;&lt;/script&gt;
+                    </span>
+                  </pre>
+                  <button
+                    onClick={() => copyToClipboard(scriptTag, "script")}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-surface-glass border border-surface-border flex items-center justify-center hover:bg-surface-border/80 text-text-secondary hover:text-white transition-all active:scale-95"
+                    title="Copy Script"
+                  >
+                    <md-icon style={{ fontSize: 16 }}>
+                      {copiedField === "script" ? "check" : "content_copy"}
+                    </md-icon>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -528,7 +549,7 @@ console.log("AI Answer:", data.reply);`;
                 onClick={() => setActiveCodeTab(tab.id)}
                 className={`px-4 py-2 rounded-xl text-xs font-medium font-mono flex items-center gap-2 transition-all ${
                   activeCodeTab === tab.id
-                    ? "bg-accent-indigo text-white shadow-md"
+                    ? "bg-accent-cyan text-black font-semibold shadow-md"
                     : "text-text-tertiary hover:text-text-primary"
                 }`}
               >
@@ -581,19 +602,19 @@ console.log("AI Answer:", data.reply);`;
         variants={item}
         className="bg-surface-glass backdrop-blur-xl border border-surface-border rounded-3xl p-8 flex flex-col gap-6 shadow-[0_8px_30px_rgba(0,0,0,0.4)] relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-accent-indigo/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-accent-cyan/10 blur-[100px] rounded-full -z-10 translate-x-1/2 -translate-y-1/2" />
 
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-accent-indigo animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-accent-cyan animate-pulse" />
             <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-              <md-icon className="text-accent-indigo">play_circle</md-icon>
+              <md-icon className="text-accent-cyan">play_circle</md-icon>
               Live API Tester
             </h2>
           </div>
           <p className="text-sm text-text-secondary">
             Test the{" "}
-            <code className="font-mono text-xs text-accent-indigo bg-accent-indigo/10 px-1.5 py-0.5 rounded border border-accent-indigo/20">
+            <code className="font-mono text-xs text-accent-cyan bg-accent-cyan/10 px-1.5 py-0.5 rounded border border-accent-cyan/20">
               POST /v1/chat/message
             </code>{" "}
             backend endpoint directly against this project's vectorized
@@ -607,13 +628,13 @@ console.log("AI Answer:", data.reply);`;
             value={playgroundQuery}
             onChange={(e) => setPlaygroundQuery(e.target.value)}
             placeholder="Type a test question for your portfolio knowledge base..."
-            className="flex-1 bg-bg-elevated border border-surface-border rounded-2xl px-5 py-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-indigo transition-all shadow-inner"
+            className="flex-1 bg-bg-elevated border border-surface-border rounded-2xl px-5 py-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-cyan transition-all shadow-inner"
             onKeyDown={(e) => e.key === "Enter" && handleRunPlaygroundTest()}
           />
           <button
             onClick={handleRunPlaygroundTest}
             disabled={playgroundLoading || !playgroundQuery.trim()}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-accent-indigo to-cyan-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-95 hover:shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all active:scale-95 disabled:opacity-50 shrink-0 shadow-lg shadow-accent-indigo/20 cursor-pointer"
+            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-accent-cyan to-cyan-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-95 hover:shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all active:scale-95 disabled:opacity-50 shrink-0 shadow-lg shadow-accent-cyan/20 cursor-pointer"
           >
             {playgroundLoading ? (
               <>
@@ -644,7 +665,7 @@ console.log("AI Answer:", data.reply);`;
                   API Response Inspector
                 </span>
                 {playgroundLatency && (
-                  <span className="text-xs font-mono text-accent-indigo bg-accent-indigo/10 px-3 py-1 rounded-full border border-accent-indigo/30 font-semibold">
+                  <span className="text-xs font-mono text-accent-cyan bg-accent-cyan/10 px-3 py-1 rounded-full border border-accent-cyan/30 font-semibold">
                     Latency: {playgroundLatency}ms | Status 200 OK
                   </span>
                 )}
@@ -663,7 +684,7 @@ console.log("AI Answer:", data.reply);`;
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* AI Assistant Output */}
                   <div className="bg-bg-elevated/80 border border-surface-border-strong rounded-2xl p-5 flex flex-col gap-3 shadow-inner">
-                    <span className="text-xs font-mono uppercase tracking-wider text-accent-indigo flex items-center gap-1.5 font-bold">
+                    <span className="text-xs font-mono uppercase tracking-wider text-accent-cyan flex items-center gap-1.5 font-bold">
                       <md-icon style={{ fontSize: 16 }}>smart_toy</md-icon>
                       Generated AI Answer
                     </span>

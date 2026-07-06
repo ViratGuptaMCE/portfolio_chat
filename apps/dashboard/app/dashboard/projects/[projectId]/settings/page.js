@@ -222,7 +222,7 @@ export default function ProjectSettingsPage({ params }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-100 gap-3 text-text-tertiary">
-        <div className="w-8 h-8 rounded-full border-2 border-accent-indigo border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-accent-cyan border-t-transparent animate-spin" />
         <p className="text-sm font-medium">Loading project settings...</p>
       </div>
     );
@@ -278,10 +278,10 @@ export default function ProjectSettingsPage({ params }) {
         <button
           onClick={handleSaveSettings}
           disabled={saving}
-          className="px-5 py-2.5 rounded-xl bg-accent-indigo text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-accent-indigo/20 hover:bg-accent-indigo/90 active:scale-[0.97] transition-all disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl bg-accent-cyan text-black font-semibold text-sm flex items-center gap-2 shadow-lg shadow-accent-cyan/20 hover:bg-accent-cyan-hover active:scale-[0.97] transition-all disabled:opacity-50 cursor-pointer"
         >
           {saving ? (
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
           ) : (
             <md-icon style={{ fontSize: 18 }}>save</md-icon>
           )}
@@ -333,7 +333,7 @@ export default function ProjectSettingsPage({ params }) {
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
             <header className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>auto_awesome</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>auto_awesome</md-icon>
                 Language Model Architecture
               </h3>
               <p className="text-xs text-text-secondary">
@@ -351,14 +351,14 @@ export default function ProjectSettingsPage({ params }) {
                     onClick={() => setFormData((prev) => ({ ...prev, llmModel: model.id }))}
                     className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative ${
                       isSelected
-                        ? "border-accent-indigo bg-accent-indigo/10 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                        ? "border-accent-cyan bg-accent-cyan/10 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
                         : "border-surface-border bg-surface-card hover:border-surface-border/80 hover:bg-surface-border/20"
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-sm font-semibold text-text-primary">{model.name}</span>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-accent-indigo/20 text-accent-indigo border border-accent-indigo/30">
+                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30">
                           {model.tag}
                         </span>
                       </div>
@@ -368,7 +368,7 @@ export default function ProjectSettingsPage({ params }) {
                     <div className="flex items-center justify-between pt-2 border-t border-surface-border/40 text-xs text-text-tertiary font-mono">
                       <span>{model.id}</span>
                       {isSelected && (
-                        <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>check_circle</md-icon>
+                        <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>check_circle</md-icon>
                       )}
                     </div>
                   </button>
@@ -381,7 +381,7 @@ export default function ProjectSettingsPage({ params }) {
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
             <header className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>tune</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>tune</md-icon>
                 Model Tone & Persona
               </h3>
               <p className="text-xs text-text-secondary">
@@ -399,11 +399,11 @@ export default function ProjectSettingsPage({ params }) {
                     onClick={() => setFormData((prev) => ({ ...prev, modelTone: tone.id }))}
                     className={`py-3 px-3 rounded-xl border text-xs font-medium flex flex-col items-center gap-2 transition-all ${
                       isSelected
-                        ? "border-accent-indigo bg-accent-indigo/15 text-text-primary shadow-sm"
+                        ? "border-accent-cyan bg-accent-cyan/15 text-text-primary shadow-sm"
                         : "border-surface-border bg-surface-card text-text-secondary hover:text-text-primary hover:bg-surface-border/20"
                     }`}
                   >
-                    <md-icon style={{ fontSize: 20, color: isSelected ? "var(--accent-indigo)" : "var(--text-tertiary)" }}>
+                    <md-icon style={{ fontSize: 20, color: isSelected ? "var(--accent-cyan)" : "var(--text-tertiary)" }}>
                       {tone.icon}
                     </md-icon>
                     {tone.label}
@@ -419,7 +419,7 @@ export default function ProjectSettingsPage({ params }) {
             <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                  <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>thermostat</md-icon>
+                  <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>thermostat</md-icon>
                   Temperature ({formData.temperature})
                 </label>
                 <span className="text-xs text-text-tertiary font-mono">
@@ -443,7 +443,7 @@ export default function ProjectSettingsPage({ params }) {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, temperature: parseFloat(e.target.value) }))
                 }
-                className="w-full accent-accent-indigo cursor-pointer mt-2"
+                className="w-full accent-accent-cyan cursor-pointer mt-2"
               />
               <div className="flex justify-between text-[11px] text-text-tertiary font-mono">
                 <span>0.00 (Exact)</span>
@@ -455,7 +455,7 @@ export default function ProjectSettingsPage({ params }) {
             {/* Response Length / Max Tokens */}
             <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
               <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>short_text</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>short_text</md-icon>
                 Response Length Limit ({formData.maxTokens} Tokens)
               </label>
               <p className="text-xs text-text-secondary">
@@ -475,7 +475,7 @@ export default function ProjectSettingsPage({ params }) {
                       onClick={() => setFormData((prev) => ({ ...prev, maxTokens: len.tokens }))}
                       className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${
                         isSelected
-                          ? "border-accent-indigo bg-accent-indigo text-white shadow-md"
+                          ? "border-accent-cyan bg-accent-cyan text-white shadow-md"
                           : "border-surface-border bg-surface-card text-text-secondary hover:text-text-primary"
                       }`}
                     >
@@ -491,7 +491,7 @@ export default function ProjectSettingsPage({ params }) {
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-6">
             <div className="flex flex-col gap-2 relative" ref={langDropdownRef}>
               <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>translate</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>translate</md-icon>
                 Primary Response Language
               </label>
               <p className="text-xs text-text-secondary mb-1">
@@ -504,12 +504,12 @@ export default function ProjectSettingsPage({ params }) {
                 onClick={() => setIsLangOpen((prev) => !prev)}
                 className={`w-full sm:w-80 px-4 py-3 rounded-xl bg-surface-card border transition-all text-left flex items-center justify-between gap-3 ${
                   isLangOpen
-                    ? "border-accent-indigo shadow-[0_0_20px_rgba(99,102,241,0.2)] bg-accent-indigo/5"
-                    : "border-surface-border hover:border-accent-indigo/40 hover:bg-surface-border/20"
+                    ? "border-accent-cyan shadow-[0_0_20px_rgba(6,182,212,0.2)] bg-accent-cyan/5"
+                    : "border-surface-border hover:border-accent-cyan/40 hover:bg-surface-border/20"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-accent-indigo/10 border border-accent-indigo/20 flex items-center justify-center text-accent-indigo font-mono text-[11px] font-semibold">
+                  <div className="w-7 h-7 rounded-lg bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center text-accent-cyan font-mono text-[11px] font-semibold">
                     {LANGUAGE_OPTIONS.find((l) => l.id === formData.modelLanguage)?.code || "AUTO"}
                   </div>
                   <div className="flex flex-col">
@@ -525,7 +525,7 @@ export default function ProjectSettingsPage({ params }) {
                 <md-icon
                   style={{
                     fontSize: 18,
-                    color: isLangOpen ? "var(--accent-indigo)" : "var(--text-tertiary)",
+                    color: isLangOpen ? "var(--accent-cyan)" : "var(--text-tertiary)",
                     transition: "transform 0.2s ease",
                     transform: isLangOpen ? "rotate(180deg)" : "rotate(0deg)",
                   }}
@@ -557,7 +557,7 @@ export default function ProjectSettingsPage({ params }) {
                           }}
                           className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between gap-3 transition-colors ${
                             isSelected
-                              ? "bg-accent-indigo/15 text-accent-indigo font-medium"
+                              ? "bg-accent-cyan/15 text-accent-cyan font-medium"
                               : "text-text-primary hover:bg-surface-border/40"
                           }`}
                         >
@@ -572,7 +572,7 @@ export default function ProjectSettingsPage({ params }) {
                           </div>
 
                           {isSelected && (
-                            <md-icon style={{ fontSize: 16, color: "var(--accent-indigo)" }}>
+                            <md-icon style={{ fontSize: 16, color: "var(--accent-cyan)" }}>
                               check
                             </md-icon>
                           )}
@@ -586,7 +586,7 @@ export default function ProjectSettingsPage({ params }) {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>assignment</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>assignment</md-icon>
                 Custom System Directives / Prompt Instructions
               </label>
               <p className="text-xs text-text-secondary">
@@ -599,7 +599,7 @@ export default function ProjectSettingsPage({ params }) {
                   setFormData((prev) => ({ ...prev, systemInstructions: e.target.value }))
                 }
                 placeholder="e.g. Always respond in bullet points. If asked about pricing, direct the user to the contact form..."
-                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-indigo focus:outline-none transition-colors leading-relaxed font-mono"
+                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-cyan focus:outline-none transition-colors leading-relaxed font-mono"
               />
             </div>
           </div>
@@ -619,11 +619,11 @@ export default function ProjectSettingsPage({ params }) {
             <div className="flex items-center justify-between pb-4 border-b border-surface-border">
               <div className="flex flex-col gap-1">
                 <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                  <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>terminal</md-icon>
-                  Standalone Headless RAG API Access
+                  <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>terminal</md-icon>
+                  API Service Endpoint Activation
                 </h3>
                 <p className="text-xs text-text-secondary">
-                  Enable external API queries to <code className="font-mono text-accent-indigo">POST /v1/chat/message</code> using your secret key.
+                  Enable external API queries to <code className="font-mono text-accent-cyan">POST /v1/chat/message</code> using your secret key.
                 </p>
               </div>
 
@@ -634,7 +634,7 @@ export default function ProjectSettingsPage({ params }) {
                   onChange={(e) => setFormData((prev) => ({ ...prev, apiEnabled: e.target.checked }))}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-indigo"></div>
+                <div className="w-11 h-6 bg-surface-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-cyan"></div>
               </label>
             </div>
 
@@ -655,7 +655,7 @@ export default function ProjectSettingsPage({ params }) {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, apiRateLimitRpm: parseInt(e.target.value, 10) }))
                 }
-                className="w-full accent-accent-indigo cursor-pointer"
+                className="w-full accent-accent-cyan cursor-pointer"
               />
             </div>
           </div>
@@ -664,7 +664,7 @@ export default function ProjectSettingsPage({ params }) {
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
             <header className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>language</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>language</md-icon>
                 CORS Whitelisted API Origins
               </h3>
               <p className="text-xs text-text-secondary">
@@ -679,7 +679,7 @@ export default function ProjectSettingsPage({ params }) {
                 onChange={(e) => setOriginInput(e.target.value)}
                 onKeyDown={handleAddOrigin}
                 placeholder="https://api.mycompany.com"
-                className="flex-1 px-4 py-2.5 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-indigo focus:outline-none transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-cyan focus:outline-none transition-colors"
               />
               <button
                 type="button"
@@ -718,7 +718,7 @@ export default function ProjectSettingsPage({ params }) {
             {/* Custom CSS */}
             <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-3">
               <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>css</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>css</md-icon>
                 Developer Custom CSS
               </label>
               <p className="text-xs text-text-secondary">
@@ -729,14 +729,14 @@ export default function ProjectSettingsPage({ params }) {
                 value={formData.customCss}
                 onChange={(e) => setFormData((prev) => ({ ...prev, customCss: e.target.value }))}
                 placeholder=".pc-header { background: #000; }"
-                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-xs font-mono focus:border-accent-indigo focus:outline-none transition-colors"
+                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-xs font-mono focus:border-accent-cyan focus:outline-none transition-colors"
               />
             </div>
 
             {/* Custom HTML */}
             <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-3">
               <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>html</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>html</md-icon>
                 Developer Custom HTML Snippet
               </label>
               <p className="text-xs text-text-secondary">
@@ -747,7 +747,7 @@ export default function ProjectSettingsPage({ params }) {
                 value={formData.customHtml}
                 onChange={(e) => setFormData((prev) => ({ ...prev, customHtml: e.target.value }))}
                 placeholder="<div class='custom-badge'>Powered by MyCompany</div>"
-                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-xs font-mono focus:border-accent-indigo focus:outline-none transition-colors"
+                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-xs font-mono focus:border-accent-cyan focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -767,7 +767,7 @@ export default function ProjectSettingsPage({ params }) {
             <div className="flex items-center justify-between pb-4 border-b border-surface-border">
               <div className="flex flex-col gap-1">
                 <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                  <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>toggle_on</md-icon>
+                  <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>toggle_on</md-icon>
                   Widget Embed Capability
                 </h3>
                 <p className="text-xs text-text-secondary">
@@ -782,14 +782,14 @@ export default function ProjectSettingsPage({ params }) {
                   onChange={(e) => setFormData((prev) => ({ ...prev, widgetEnabled: e.target.checked }))}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-surface-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-indigo"></div>
+                <div className="w-11 h-6 bg-surface-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-cyan"></div>
               </label>
             </div>
 
             {/* Release Version Tag */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>sell</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>sell</md-icon>
                 Active Release Version Tag
               </label>
               <p className="text-xs text-text-secondary">
@@ -800,7 +800,7 @@ export default function ProjectSettingsPage({ params }) {
                 value={formData.widgetVersion}
                 onChange={(e) => setFormData((prev) => ({ ...prev, widgetVersion: e.target.value }))}
                 placeholder="v1.0.0"
-                className="w-full sm:w-64 px-4 py-2.5 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm font-mono focus:border-accent-indigo focus:outline-none transition-colors"
+                className="w-full sm:w-64 px-4 py-2.5 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm font-mono focus:border-accent-cyan focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -809,11 +809,11 @@ export default function ProjectSettingsPage({ params }) {
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
             <header className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>security</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>security</md-icon>
                 Authorized Widget Website Domains
               </h3>
               <p className="text-xs text-text-secondary">
-                Restrict widget loading strictly to authorized website domains (e.g. <code className="font-mono text-accent-indigo">https://portfolio.dev</code>).
+                Restrict widget loading strictly to authorized website domains (e.g. <code className="font-mono text-accent-cyan">https://portfolio.dev</code>).
               </p>
             </header>
 
@@ -824,7 +824,7 @@ export default function ProjectSettingsPage({ params }) {
                 onChange={(e) => setDomainInput(e.target.value)}
                 onKeyDown={handleAddDomain}
                 placeholder="https://myportfolio.com"
-                className="flex-1 px-4 py-2.5 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-indigo focus:outline-none transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-cyan focus:outline-none transition-colors"
               />
               <button
                 type="button"
@@ -842,7 +842,7 @@ export default function ProjectSettingsPage({ params }) {
                 formData.allowedDomains.map((domain, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-1 rounded-lg bg-accent-indigo/10 border border-accent-indigo/30 text-accent-indigo text-xs font-mono flex items-center gap-2"
+                    className="px-3 py-1 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 text-accent-cyan text-xs font-mono flex items-center gap-2"
                   >
                     {domain}
                     <button
@@ -871,11 +871,11 @@ export default function ProjectSettingsPage({ params }) {
           {/* Public Widget Token */}
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-3">
             <label className="text-sm font-semibold text-text-primary flex items-center gap-2">
-              <md-icon style={{ color: "var(--accent-indigo)", fontSize: 18 }}>key</md-icon>
+              <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>key</md-icon>
               Public Widget Embed Token
             </label>
             <p className="text-xs text-text-secondary">
-              Included in public website <code className="font-mono text-accent-indigo">&lt;script&gt;</code> tags.
+              Included in public website <code className="font-mono text-accent-cyan">&lt;script&gt;</code> tags.
             </p>
 
             <div className="flex items-center gap-2">
@@ -904,11 +904,11 @@ export default function ProjectSettingsPage({ params }) {
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
             <header className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
-                <md-icon style={{ color: "var(--accent-indigo)", fontSize: 20 }}>vpn_key</md-icon>
+                <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>vpn_key</md-icon>
                 Secret API Key Authentication
               </h3>
               <p className="text-xs text-text-secondary">
-                Secret keys start with <code className="font-mono text-accent-indigo">pct_secret_</code>. Only SHA-256 hashes are stored in the database.
+                Secret keys start with <code className="font-mono text-accent-cyan">pct_secret_</code>. Only SHA-256 hashes are stored in the database.
               </p>
             </header>
 

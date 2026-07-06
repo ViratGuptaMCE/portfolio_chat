@@ -130,7 +130,7 @@ CREATE INDEX idx_website_sources_project_id ON website_sources(project_id);
 ### Frontend (`apps/dashboard`)
 - **Framework**: Next.js 16 (App Router), React 19
 - **Parsing**: `pdf-parse` for binary PDF text extraction
-- **Styling & Aesthetic**: Modern Tech-Minimalist design system with monochromatic high-contrast UI
+- **Styling & Aesthetic**: Obsidian glass design system featuring Cyan (`#06b6d4`) as the primary brand accent, Red (`#ef4444`) for destructive actions, Green (`#10b981`) for success states, and high-contrast typography
 - **Animations**: Framer Motion (Emil Kowalski design engineering principles: fluid `layoutId` tab transitions, spring physics, micro-interactions)
 - **Authentication**: Better Auth with Email/Password, Password Reset / Forgot Password flow, Magic Link, Nodemailer SMTP verification, and Google OAuth support
 

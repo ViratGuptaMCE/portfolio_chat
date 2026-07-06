@@ -3,7 +3,7 @@ export const DEFAULT_WIDGET_CONFIG = {
   appearance: {
     presetId: "minimal-dark",
     themeMode: "dark",
-    primaryColor: "#6366f1",
+    primaryColor: "#06b6d4",
     secondaryColor: "#09090b",
     backgroundColor: "#111113",
     textColor: "#ffffff",
@@ -51,8 +51,8 @@ export const DEFAULT_WIDGET_CONFIG = {
     padding: 16
   },
   bubbles: {
-    userBg: "#6366f1",
-    userText: "#ffffff",
+    userBg: "#06b6d4",
+    userText: "#000000",
     botBg: "#18181b",
     botText: "#f4f4f5",
     borderRadius: 14,
@@ -64,7 +64,7 @@ export const DEFAULT_WIDGET_CONFIG = {
     placeholder: "Ask me anything...",
     autoExpand: true,
     sendIcon: "send",
-    sendColor: "#6366f1"
+    sendColor: "#06b6d4"
   },
   mobile: {
     mode: "bottom-sheet",
@@ -110,19 +110,19 @@ export const THEME_PRESETS = [
   {
     id: "minimal-dark",
     name: "Minimal Dark",
-    description: "Sleek dark zinc theme with vibrant indigo accents",
+    description: "Sleek dark zinc theme with vibrant cyan accents",
     config: {
       presetId: "minimal-dark",
       themeMode: "dark",
-      primaryColor: "#6366f1",
+      primaryColor: "#06b6d4",
       secondaryColor: "#09090b",
       backgroundColor: "#111113",
       textColor: "#ffffff",
       fontFamily: "Inter, sans-serif",
       borderRadius: 16,
       borderColor: "#27272a",
-      userBg: "#6366f1",
-      userText: "#ffffff",
+      userBg: "#06b6d4",
+      userText: "#000000",
       botBg: "#18181b",
       botText: "#f4f4f5"
     }

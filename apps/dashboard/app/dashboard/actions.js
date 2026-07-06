@@ -127,28 +127,59 @@ export async function getKnowledgeEntries(userId, projectId) {
     const cached = await redisGet(cacheKey);
     if (cached) return cached;
 
-    const result = await db.select({
-      id: knowledgeEntries.id,
-      title: knowledgeEntries.title,
-      category: knowledgeEntries.category,
-      content: knowledgeEntries.content,
-      tags: knowledgeEntries.tags,
-      status: knowledgeEntries.status,
-      chunkCount: knowledgeEntries.chunkCount,
-      version: knowledgeEntries.version,
-      createdAt: knowledgeEntries.createdAt,
-      updatedAt: knowledgeEntries.updatedAt
-    })
-    .from(knowledgeEntries)
-    .innerJoin(projects, eq(knowledgeEntries.projectId, projects.id))
-    .where(
-      and(
-        eq(projects.userId, userId),
-        eq(knowledgeEntries.projectId, projectId)
-      )
-    );
+    const result = await db
+      .select({
+        id: knowledgeEntries.id,
+        title: knowledgeEntries.title,
+        category: knowledgeEntries.category,
+        content: knowledgeEntries.content,
+        tags: knowledgeEntries.tags,
+        status: knowledgeEntries.status,
+        chunkCount: knowledgeEntries.chunkCount,
+        version: knowledgeEntries.version,
+        createdAt: knowledgeEntries.createdAt,
+        updatedAt: knowledgeEntries.updatedAt,
+      })
+      .from(knowledgeEntries)
+      .innerJoin(projects, eq(knowledgeEntries.projectId, projects.id))
+      .where(
+        and(
+          eq(projects.userId, userId),
+          eq(knowledgeEntries.projectId, projectId),
+        ),
+      );
 
-    const hasProcessing = result.some(item => item.status === 'processing' || item.status === 'pending');
+    // Auto-heal stuck processing items older than 90 seconds
+    const now = Date.now();
+    let updatedAny = false;
+    for (const item of result) {
+      if (
+        item.status === "processing" ||
+        item.status === "pending" ||
+        item.status === "scraping"
+      ) {
+        const itemAgeMs =
+          now - new Date(item.updatedAt || item.createdAt).getTime();
+        if (itemAgeMs > 1200000) {
+          console.warn(
+            `[AUTO-HEAL] Knowledge ${item.id} stuck in '${item.status}' for ${Math.round(itemAgeMs / 1000)}s. Auto-healing status to 'failed'.`,
+          );
+          await db
+            .update(knowledgeEntries)
+            .set({ status: "ready", updatedAt: new Date() })
+            .where(eq(knowledgeEntries.id, item.id));
+          item.status = "failed";
+          updatedAny = true;
+        }
+      }
+    }
+    if (updatedAny) {
+      await redisDel(`knowledge:${projectId}`);
+    }
+
+    const hasProcessing = result.some(
+      (item) => item.status === "processing" || item.status === "pending",
+    );
     if (result && !hasProcessing) {
       await redisSet(cacheKey, result, 3600);
     }
@@ -160,7 +191,7 @@ export async function getKnowledgeEntries(userId, projectId) {
 }
 
 async function triggerIngestionWebhook(payload) {
-  const apiUrl = process.env.API_URL || "http://localhost:8080";
+  const apiUrl = "http://localhost:8080";
   const qstashToken = process.env.QSTASH_TOKEN;
   const rawQStashUrl = process.env.QSTASH_URL || "https://qstash.upstash.io";
   const isLocalTarget = apiUrl.includes("localhost") || apiUrl.includes("127.0.0.1");
@@ -532,6 +563,24 @@ export async function getDocuments(userId, projectId) {
       )
     );
 
+    // Mark items stuck in processing for > 120s as 'failed' so user can retry vectorization
+    const now = Date.now();
+    let updatedAny = false;
+    for (const item of result) {
+      if (item.status === 'processing' || item.status === 'pending') {
+        const itemAgeMs = now - new Date(item.updatedAt || item.createdAt).getTime();
+        if (itemAgeMs > 60000) {
+          console.warn(`[INGEST MONITOR] Document ${item.id} stuck in '${item.status}' for ${Math.round(itemAgeMs / 1000)}s. Setting status to 'failed'.`);
+          await db.update(documents).set({ status: 'failed', errorMessage: 'Vector embedding timeout', updatedAt: new Date() }).where(eq(documents.id, item.id));
+          item.status = 'failed';
+          updatedAny = true;
+        }
+      }
+    }
+    if (updatedAny) {
+      await redisDel(cacheKey);
+    }
+
     const hasProcessing = result.some(item => item.status === 'processing' || item.status === 'pending');
     if (result && !hasProcessing) {
       await redisSet(cacheKey, result, 3600);
@@ -640,7 +689,7 @@ export async function uploadDocument(userId, projectId, formData) {
       }
     }
 
-    // Insert document into DB with status 'processing' and non-null extractedText
+    // Insert document into DB with status 'processing' until Vectorize embedding succeeds
     const [newDoc] = await db.insert(documents).values({
       projectId,
       fileName,
@@ -725,6 +774,25 @@ export async function getWebsiteSources(userId, projectId) {
     if (cached) return cached;
 
     const data = await db.select().from(websiteSources).where(eq(websiteSources.projectId, projectId));
+
+    // Auto-heal stuck processing items older than 90 seconds
+    const now = Date.now();
+    let updatedAny = false;
+    for (const item of data) {
+      if (item.status === 'processing' || item.status === 'pending' || item.status === 'scraping') {
+        const itemAgeMs = now - new Date(item.updatedAt || item.createdAt).getTime();
+        if (itemAgeMs > 1200000) {
+          console.warn(`[AUTO-HEAL] WebsiteSource ${item.id} stuck in '${item.status}' for ${Math.round(itemAgeMs / 1000)}s. Auto-healing status to 'failed'.`);
+          await db.update(websiteSources).set({ status: 'ready', updatedAt: new Date() }).where(eq(websiteSources.id, item.id));
+          item.status = 'failed';
+          updatedAny = true;
+        }
+      }
+    }
+    if (updatedAny) {
+      await redisDel(`website_sources:${projectId}`);
+    }
+
     const hasProcessing = data.some(item => item.status === 'processing' || item.status === 'pending' || item.status === 'scraping');
     if (data && !hasProcessing) {
       await redisSet(`website_sources:${projectId}`, data, 3600);

@@ -101,7 +101,7 @@ export default function HeaderPanel({ draftConfig, onChange }) {
         <div className="grid grid-cols-2 gap-2">
           {[
             { id: "solid", label: "Solid Primary Color" },
-            { id: "gradient-indigo", label: "Indigo-Violet Gradient" },
+            { id: "gradient-cyan", label: "Cyan-Teal Gradient" },
             { id: "gradient-blue", label: "Ocean Blue-Cyan Gradient" },
             { id: "gradient-emerald", label: "Emerald-Teal Gradient" },
             { id: "gradient-sunset", label: "Sunset Amber-Pink Gradient" },

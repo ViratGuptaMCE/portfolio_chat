@@ -38,10 +38,8 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-[#111] dark:text-[#f3f4f6] font-inter flex flex-col relative z-0 selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
       
-      {/* Background Grid Pattern (Tech Minimalist) */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxyZWN0IHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNMCAwaDQwdjQwaC00MHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBoNDBNNDAgMHY0MCIgc3Ryb2tlPSJyZ2JhKDAsMCwwLDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxyZWN0IHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNMCAwaDQwdjQwaC00MHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgNDBoNDBNNDAgMHY0MCIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+')] pointer-events-none -z-10" />
       
-      {/* Persistent Monochromatic Header */}
       <header className="h-16 w-full sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#e5e5e5] dark:border-[#222] flex items-center justify-between px-6 md:px-12">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push("/dashboard")}>
           <div className="w-8 h-8 rounded-xl bg-black dark:bg-white flex items-center justify-center shadow-sm">
@@ -70,12 +68,11 @@ export default function DashboardLayout({ children }) {
         </div>
       </header>
 
-      {/* Main Content Area with Emil's Page Transition */}
       <motion.main
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-        className="flex-1 w-full max-w-[1400px] mx-auto p-6 md:p-12"
+        className="flex-1 w-full max-w-400 mx-auto p-6 md:p-12"
       >
         {children}
       </motion.main>

@@ -195,7 +195,10 @@ export default function CustomizerPage({ params }) {
               </span>
               <span>{notification.message}</span>
             </div>
-            <button onClick={() => setNotification(null)} className="hover:opacity-75">
+            <button
+              onClick={() => setNotification(null)}
+              className="hover:opacity-75"
+            >
               <span className="material-symbols-outlined text-base">close</span>
             </button>
           </motion.div>
@@ -203,32 +206,51 @@ export default function CustomizerPage({ params }) {
       </AnimatePresence>
 
       {/* Header Actions & Publish Control Bar */}
-      <div className="bg-white dark:bg-[#111] p-5 rounded-[2rem] border border-[#e5e5e5] dark:border-[#222] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold">
-            <span className="material-symbols-outlined text-xl">palette</span>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-black dark:text-white">
-                Chatbot Customizer Studio
-              </h2>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
-                  isPublishedSync
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                    : isDirty
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                    : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                }`}
-              >
-                {isPublishedSync ? "Live Published" : isDirty ? "Unsaved Edits" : "Draft Saved"}
-              </span>
+      <div className="bg-white dark:bg-[#111] p-5 rounded-[2rem] border border-[#e5e5e5] dark:border-[#222] flex flex-col md:flex-col md:items-start justify-between gap-4 shadow-sm">
+        <div className="w-full flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-bold">
+              <span className="material-symbols-outlined text-xl">palette</span>
             </div>
-            <p className="text-xs text-[#666] dark:text-[#888]">
-              Design & test your widget's visual theme, launcher, header, and prompt chips in real-time.
-            </p>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-black dark:text-white">
+                  Chatbot Customizer Studio
+                </h2>
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+                    isPublishedSync
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      : isDirty
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                        : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                  }`}
+                >
+                  {isPublishedSync
+                    ? "Live Published"
+                    : isDirty
+                      ? "Unsaved Edits"
+                      : "Draft Saved"}
+                </span>
+              </div>
+              <p className="text-xs text-[#666] dark:text-[#888]">
+                Design & test your widget's visual theme, launcher, header, and
+                prompt chips in real-time.
+              </p>
+            </div>
           </div>
+          {/* Publish Button */}
+          <button
+            type="button"
+            disabled={isPublishing}
+            onClick={handlePublish}
+            className="px-5 py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">
+              rocket_launch
+            </span>
+            {isPublishing ? "Publishing..." : "Publish to Live"}
+          </button>
         </div>
 
         {/* Action Controls */}
@@ -240,7 +262,9 @@ export default function CustomizerPage({ params }) {
             title="Export Widget JSON"
             className="px-3 py-2 rounded-xl border border-[#e5e5e5] dark:border-[#333] text-xs font-semibold text-black dark:text-white hover:bg-[#fafafa] dark:hover:bg-[#1a1a1a] transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base">download</span>
+            <span className="material-symbols-outlined text-base">
+              download
+            </span>
             Export
           </button>
 
@@ -248,7 +272,12 @@ export default function CustomizerPage({ params }) {
           <label className="px-3 py-2 rounded-xl border border-[#e5e5e5] dark:border-[#333] text-xs font-semibold text-black dark:text-white hover:bg-[#fafafa] dark:hover:bg-[#1a1a1a] transition-all flex items-center gap-1.5 cursor-pointer">
             <span className="material-symbols-outlined text-base">upload</span>
             Import
-            <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImportJson}
+              className="hidden"
+            />
           </label>
 
           {/* Reset Dropdown */}
@@ -269,17 +298,6 @@ export default function CustomizerPage({ params }) {
             className="px-4 py-2.5 rounded-xl border border-[#e5e5e5] dark:border-[#333] text-xs font-bold text-black dark:text-white hover:bg-[#fafafa] dark:hover:bg-[#1a1a1a] transition-all disabled:opacity-40 cursor-pointer"
           >
             {isSaving ? "Saving..." : "Save Draft"}
-          </button>
-
-          {/* Publish Button */}
-          <button
-            type="button"
-            disabled={isPublishing}
-            onClick={handlePublish}
-            className="px-5 py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base">rocket_launch</span>
-            {isPublishing ? "Publishing..." : "Publish to Live"}
           </button>
         </div>
       </div>
@@ -303,7 +321,9 @@ export default function CustomizerPage({ params }) {
                       : "text-[#666] dark:text-[#888] hover:text-black dark:hover:text-white hover:bg-[#fafafa] dark:hover:bg-[#18181b]"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                  <span className="material-symbols-outlined text-base">
+                    {tab.icon}
+                  </span>
                   {tab.label}
                 </button>
               );
@@ -320,26 +340,44 @@ export default function CustomizerPage({ params }) {
               />
             )}
             {activeTab === "launcher" && (
-              <LauncherPanel draftConfig={currentDraft} onChange={setCurrentDraft} />
+              <LauncherPanel
+                draftConfig={currentDraft}
+                onChange={setCurrentDraft}
+              />
             )}
             {activeTab === "header" && (
-              <HeaderPanel draftConfig={currentDraft} onChange={setCurrentDraft} />
+              <HeaderPanel
+                draftConfig={currentDraft}
+                onChange={setCurrentDraft}
+              />
             )}
             {activeTab === "welcome" && (
-              <WelcomePanel draftConfig={currentDraft} onChange={setCurrentDraft} />
+              <WelcomePanel
+                draftConfig={currentDraft}
+                onChange={setCurrentDraft}
+              />
             )}
             {activeTab === "layout" && (
-              <LayoutBubblePanel draftConfig={currentDraft} onChange={setCurrentDraft} />
+              <LayoutBubblePanel
+                draftConfig={currentDraft}
+                onChange={setCurrentDraft}
+              />
             )}
             {activeTab === "suggestedQuestions" && (
-              <SuggestedQuestionsPanel draftConfig={currentDraft} onChange={setCurrentDraft} />
+              <SuggestedQuestionsPanel
+                draftConfig={currentDraft}
+                onChange={setCurrentDraft}
+              />
             )}
           </div>
         </div>
 
         {/* Right Preview Stage (8/12 cols - Expanded Space) */}
         <div className="lg:col-span-8 sticky top-6">
-          <LiveWidgetPreview draftConfig={currentDraft} project={{ name: session?.user?.name || "Portfolio" }} />
+          <LiveWidgetPreview
+            draftConfig={currentDraft}
+            project={{ name: session?.user?.name || "Portfolio" }}
+          />
         </div>
       </div>
     </div>

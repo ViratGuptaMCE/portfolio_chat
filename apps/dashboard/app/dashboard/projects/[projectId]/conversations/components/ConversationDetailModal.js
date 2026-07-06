@@ -71,7 +71,7 @@ function renderFormattedInline(text) {
       return <em key={i} className="italic text-[#333] dark:text-[#ddd]">{part.slice(1, -1)}</em>;
     }
     if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
-      return <code key={i} className="px-1.5 py-0.5 rounded bg-[#eaeaea] dark:bg-[#222] font-mono text-[11px] text-indigo-600 dark:text-indigo-400">{part.slice(1, -1)}</code>;
+      return <code key={i} className="px-1.5 py-0.5 rounded bg-[#eaeaea] dark:bg-[#222] font-mono text-[11px] text-cyan-600 dark:text-cyan-400">{part.slice(1, -1)}</code>;
     }
     if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
       const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
@@ -82,7 +82,7 @@ function renderFormattedInline(text) {
             href={match[2]}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-600 dark:text-indigo-400 underline font-medium hover:opacity-80"
+            className="text-cyan-600 dark:text-cyan-400 underline font-medium hover:opacity-80"
           >
             {match[1]}
           </a>
@@ -245,7 +245,7 @@ export default function ConversationDetailModal({
                       className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                         msg.role === "user"
                           ? "bg-black dark:bg-white text-white dark:text-black"
-                          : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                          : "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20"
                       }`}
                     >
                       {msg.role === "user" ? "Visitor Question" : "AI Assistant"}
@@ -315,7 +315,7 @@ export default function ConversationDetailModal({
                                     {src.text.length > 180 && (
                                       <button
                                         onClick={() => toggleChunkExpand(chunkKey)}
-                                        className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400 hover:underline w-fit cursor-pointer mt-0.5"
+                                        className="text-[10px] font-mono text-cyan-600 dark:text-cyan-400 hover:underline w-fit cursor-pointer mt-0.5"
                                       >
                                         {isChunkExpanded ? "Show less" : "Show full chunk"}
                                       </button>

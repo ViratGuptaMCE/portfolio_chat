@@ -18,17 +18,20 @@
   --text-tertiary: #71717a;
 
   /* Brand + system accents — each color is reserved for a meaning, don't mix them freely */
-  --accent-indigo: #6366f1;   /* primary brand, primary actions, active states */
-  --accent-purple: #a855f7;   /* API / "developer path" surfaces specifically */
-  --accent-emerald: #10b981;  /* success, online, ready states only */
+  --accent-cyan: #06b6d4;     /* primary brand, primary actions, active states */
+  --accent-cyan-hover: #0891b2;
+  --accent-indigo: #06b6d4;   /* mapped to cyan primary */
+  --accent-purple: #a855f7;   /* API / developer path surfaces */
+  --accent-emerald: #10b981;  /* success, online, ready states */
   --accent-amber: #f59e0b;    /* warnings only */
-  --accent-rose: #f43f5e;     /* destructive / errors only */
+  --accent-rose: #f43f5e;     /* destructive / errors */
+  --accent-red: #ef4444;      /* red for destructive actions */
 
   /* Material Design 3 Dark Theme Tokens mapped to our design system */
-  --md-sys-color-primary: var(--accent-indigo);
-  --md-sys-color-on-primary: #ffffff;
-  --md-sys-color-primary-container: rgba(99, 102, 241, 0.2);
-  --md-sys-color-on-primary-container: #e0e7ff;
+  --md-sys-color-primary: var(--accent-cyan);
+  --md-sys-color-on-primary: #000000;
+  --md-sys-color-primary-container: rgba(6, 182, 212, 0.2);
+  --md-sys-color-on-primary-container: #cff4fc;
   
   --md-sys-color-background: var(--bg-void);
   --md-sys-color-on-background: var(--text-primary);
@@ -44,10 +47,10 @@
   --md-sys-color-outline: var(--surface-border-strong);
   --md-sys-color-outline-variant: var(--surface-border);
   
-  --md-sys-color-error: var(--accent-rose);
+  --md-sys-color-error: var(--accent-red);
   --md-sys-color-on-error: #ffffff;
-  --md-sys-color-error-container: rgba(244, 63, 94, 0.2);
-  --md-sys-color-on-error-container: #ffe4e6;
+  --md-sys-color-error-container: rgba(239, 68, 68, 0.2);
+  --md-sys-color-on-error-container: #fee2e2;
 
   /* Emil's Animation Easing Curves */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -72,11 +75,13 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
   
-  --color-accent-indigo: var(--accent-indigo);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-indigo: var(--accent-cyan);
   --color-accent-purple: var(--accent-purple);
   --color-accent-emerald: var(--accent-emerald);
   --color-accent-amber: var(--accent-amber);
   --color-accent-rose: var(--accent-rose);
+  --color-accent-red: var(--accent-red);
 
   --font-sans: 'Inter', var(--font-inter), sans-serif;
   --font-mono: 'JetBrains Mono', var(--font-jetbrains-mono), monospace;

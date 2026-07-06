@@ -51,7 +51,7 @@ export default function ProjectLayout({ children, params }) {
                 onClick={() => router.push(tab.path)}
                 className={`relative px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 rounded-t-lg ${
                   isActive 
-                    ? "text-accent-indigo bg-accent-indigo/5" 
+                    ? "text-accent-cyan bg-accent-cyan/5" 
                     : "text-text-secondary hover:text-text-primary hover:bg-surface-border/30"
                 }`}
               >
@@ -60,7 +60,7 @@ export default function ProjectLayout({ children, params }) {
                 {isActive && (
                   <motion.div 
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-indigo shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-cyan shadow-[0_0_8px_rgba(6,182,212,0.8)]"
                     initial={false}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
