@@ -35,6 +35,7 @@ DESIGN.md
 TABLES.md
 LOG.md
 *.sample.md
+.turbo*
 
 # debug
 npm-debug.log*

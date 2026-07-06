@@ -21,5 +21,8 @@
   "dependencies": {
     "@neondatabase/auth": "^0.4.2-beta",
     "nodemailer": "^9.0.3"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }
