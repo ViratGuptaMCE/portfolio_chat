@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useSession, signOut } from "../../lib/auth-client";
 
 export default function DashboardLayout({ children }) {
@@ -42,8 +43,8 @@ export default function DashboardLayout({ children }) {
       
       <header className="h-16 w-full sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#e5e5e5] dark:border-[#222] flex items-center justify-between px-6 md:px-12">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push("/dashboard")}>
-          <div className="w-8 h-8 rounded-xl bg-black dark:bg-white flex items-center justify-center shadow-sm">
-            <span className="material-symbols-outlined text-white dark:text-black text-lg">data_object</span>
+          <div className="w-8 h-8 rounded-xl p-2 flex items-center justify-center overflow-hidden shrink-0 bg-white">
+            <Image src="/icon.svg" alt="PortfolioChat Logo" width={32} height={32} className="w-full h-full" />
           </div>
           <span className="text-lg font-semibold tracking-tight text-black dark:text-white">PortfolioChat</span>
         </div>
