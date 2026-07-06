@@ -433,6 +433,17 @@ export default async function widgetRoutes(server) {
       .pc-send-btn:active { transform: scale(0.95); }
       .pc-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+      /* Thin, Theme-Adaptive Custom Scrollbars */
+      .custom-scrollbar::-webkit-scrollbar { width: 1px; height: 1px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(160, 160, 160, 0.25); border-radius: 9999px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(160, 160, 160, 0.45); }
+      .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(160, 160, 160, 0.25) transparent; }
+
+      /* No scrollbar utility */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
       \${devCfg.customCss || ''}
     \`;
 
@@ -484,12 +495,12 @@ export default async function widgetRoutes(server) {
         <button class="pc-close-btn" id="pc-close"><span class="material-symbols-outlined">close</span></button>
       </div>
 
-      <div class="pc-body" id="pc-messages">
+      <div class="pc-body custom-scrollbar" id="pc-messages">
         \${wlc.subgreeting ? '<div class="pc-subgreeting">' + wlc.subgreeting + '</div>' : ''}
         <div class="pc-msg pc-msg-bot">\${wlc.greeting}</div>
       </div>
 
-      \${questions.length ? '<div class="pc-chips" id="pc-chips">' + questions.map(function(q) { return '<button class="pc-chip">' + q + '</button>'; }).join('') + '</div>' : ''}
+      \${questions.length ? '<div class="pc-chips no-scrollbar" id="pc-chips">' + questions.map(function(q) { return '<button class="pc-chip">' + q + '</button>'; }).join('') + '</div>' : ''}
 
       <div class="pc-footer">
         <input type="text" class="pc-input" id="pc-input" placeholder="\${placeholderText}" />
