@@ -1,6 +1,91 @@
 import { db, projects, projectSettings, knowledgeEntries, documents, websiteSources, chatSessions, conversationMessages, eq, and, or, redisGet, redisSet } from '@portfoliochat/db';
 import crypto from 'crypto';
 
+async function fetchLLMResponseWithFallback(systemPrompt, userMessage, temperature, maxTokens) {
+  const configs = [
+    {
+      provider: "cerebras",
+      model: "gpt-oss-120b",
+      url: "https://api.cerebras.ai/v1/chat/completions",
+      key: process.env.CEREBRAS_API_KEY,
+    },
+    {
+      provider: "cerebras",
+      model: "gemma-4-31b",
+      url: "https://api.cerebras.ai/v1/chat/completions",
+      key: process.env.CEREBRAS_API_KEY,
+    },
+    {
+      provider: "gemini",
+      model: "gemini-2.5-pro",
+      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      key: process.env.GEMINI_API_KEY,
+    },
+    {
+      provider: "gemini",
+      model: "gemini-2.5-flash",
+      url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      key: process.env.GEMINI_API_KEY,
+    },
+    {
+      provider: "groq",
+      model: "openai/gpt-oss-20b",
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      key: process.env.GROQ_API_KEY,
+    },
+    {
+      provider: "groq",
+      model: "openai/gpt-oss-120b",
+      url: "https://api.groq.com/openai/v1/chat/completions",
+      key: process.env.GROQ_API_KEY,
+    },
+  ];
+
+  for (const config of configs) {
+    if (!config.key) {
+      console.warn(`[CHAT API FALLBACK] Skipping ${config.provider} - missing API key.`);
+      continue;
+    }
+
+    try {
+      console.log(`[CHAT API FALLBACK] Trying ${config.provider} with model '${config.model}'...`);
+      
+      const res = await fetch(config.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${config.key}`
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: temperature,
+          max_tokens: maxTokens,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        let rawContent = data.choices?.[0]?.message?.content || "";
+        rawContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+        if (rawContent) {
+           return rawContent;
+        }
+      } else {
+        const errText = await res.text();
+        console.error(`[CHAT API FALLBACK ERROR] ${config.provider} ${config.model} failed. Status ${res.status}: ${errText}`);
+      }
+    } catch (err) {
+      console.error(`[CHAT API FALLBACK EXCEPTION] ${config.provider} ${config.model} exception:`, err.message);
+    }
+  }
+
+  return "";
+}
+
 export default async function (server) {
   server.post('/message', async (request, reply) => {
     const authHeader =
@@ -268,47 +353,13 @@ ${customDirectives ? `CUSTOM INSTRUCTIONS:\n${customDirectives}\n` : ''}
 KNOWLEDGE BASE FACTS:
 ${contextBlock}`;
 
-      // 4. LLM Generation Call (Groq API using active model directly)
-      let aiResponseText = "";
-      const groqApiKey = process.env.GROQ_API_KEY;
-
-      if (groqApiKey) {
-        try {
-          console.log(`[CHAT API] Calling Groq API with configured model '${activeModel}'...`);
-          const groqRes = await fetch(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${groqApiKey}`,
-              },
-              body: JSON.stringify({
-                model: activeModel,
-                messages: [
-                  { role: "system", content: systemPrompt },
-                  { role: "user", content: message },
-                ],
-                temperature: activeTemperature,
-                max_tokens: activeMaxTokens,
-              }),
-            },
-          );
-
-          if (groqRes.ok) {
-            const groqData = await groqRes.json();
-            let rawContent = groqData.choices?.[0]?.message?.content || "";
-            // Strip internal LLM reasoning block (<think>...</think>) if present in model response
-            rawContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-            aiResponseText = rawContent;
-          } else {
-            const errText = await groqRes.text();
-            console.error(`[CHAT API GROQ ERROR] Status ${groqRes.status}: ${errText}`);
-          }
-        } catch (groqErr) {
-          console.error('[CHAT API GROQ EXCEPTION]', groqErr.message);
-        }
-      }
+      // 4. LLM Generation Call with Fallback Mechanism
+      let aiResponseText = await fetchLLMResponseWithFallback(
+        systemPrompt, 
+        message, 
+        activeTemperature, 
+        activeMaxTokens
+      );
 
       // Fallback Response if LLM call fails or key is unconfigured
       if (!aiResponseText) {

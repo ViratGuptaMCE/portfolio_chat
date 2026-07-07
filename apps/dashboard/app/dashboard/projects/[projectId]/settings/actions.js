@@ -1,6 +1,6 @@
 "use server";
 
-import { db, projects, projectSettings, eq, and, redisGet, redisSet, redisDel } from "@portfoliochat/db";
+import { db, projects, projectSettings, documents, knowledgeEntries, websiteSources, eq, and, redisGet, redisSet, redisDel } from "@portfoliochat/db";
 import crypto from "crypto";
 
 async function triggerQStashEvent(destination, payload) {
@@ -327,6 +327,24 @@ export async function deleteProjectAction(userId, projectId, confirmSlug) {
     if (proj.slug !== confirmSlug) {
       return { success: false, error: "Project slug confirmation does not match" };
     }
+
+    // --- Vectorize Data Cleanup ---
+    // Fetch all documents, knowledge entries, and website sources associated with the project
+    const projectDocs = await db.select({ id: documents.id, chunkCount: documents.chunkCount }).from(documents).where(eq(documents.projectId, projectId));
+    const projectEntries = await db.select({ id: knowledgeEntries.id, chunkCount: knowledgeEntries.chunkCount }).from(knowledgeEntries).where(eq(knowledgeEntries.projectId, projectId));
+    const projectWebsites = await db.select({ id: websiteSources.id, chunkCount: websiteSources.chunkCount }).from(websiteSources).where(eq(websiteSources.projectId, projectId));
+
+    // Trigger vector deletion events for each
+    for (const d of projectDocs) {
+      if (d.chunkCount > 0) triggerQStashEvent("/webhooks/delete-vectors", { documentId: d.id, chunkCount: d.chunkCount, projectId });
+    }
+    for (const e of projectEntries) {
+      if (e.chunkCount > 0) triggerQStashEvent("/webhooks/delete-vectors", { entryId: e.id, chunkCount: e.chunkCount, projectId });
+    }
+    for (const w of projectWebsites) {
+      if (w.chunkCount > 0) triggerQStashEvent("/webhooks/delete-vectors", { documentId: w.id, chunkCount: w.chunkCount, projectId });
+    }
+    // ------------------------------
 
     await db.delete(projects).where(eq(projects.id, projectId));
     await redisDel(`project:${projectId}:settings`).catch(console.error);

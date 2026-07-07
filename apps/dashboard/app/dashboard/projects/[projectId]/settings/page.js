@@ -17,16 +17,40 @@ if (typeof window !== "undefined") {
 
 const MODEL_OPTIONS = [
   {
+    id: "gpt-oss-120b",
+    name: "Cerebras GPT-OSS 120B",
+    desc: "Cerebras high-reasoning model.",
+    tag: "Cerebras",
+  },
+  {
+    id: "gemma-4-31b",
+    name: "Cerebras Gemma 4 31B",
+    desc: "Cerebras fast and efficient model.",
+    tag: "Cerebras",
+  },
+  {
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
+    desc: "Gemini ultra high-reasoning model.",
+    tag: "Gemini",
+  },
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    desc: "Gemini fast & efficient model.",
+    tag: "Gemini",
+  },
+  {
     id: "openai/gpt-oss-120b",
-    name: "OpenAI GPT-OSS 120B",
-    desc: "Ultra high-reasoning flagship model for complex query analysis.",
-    tag: "Recommended",
+    name: "Groq GPT-OSS 120B",
+    desc: "Groq high-reasoning flagship model.",
+    tag: "Groq",
   },
   {
     id: "openai/gpt-oss-20b",
-    name: "OpenAI GPT-OSS 20B",
-    desc: "Balanced speed and accuracy for standard conversational workloads.",
-    tag: "Fast & Efficient",
+    name: "Groq GPT-OSS 20B",
+    desc: "Groq balanced speed and accuracy.",
+    tag: "Groq",
   },
 ];
 
@@ -329,49 +353,39 @@ export default function ProjectSettingsPage({ params }) {
           transition={{ duration: 0.25 }}
           className="flex flex-col gap-6"
         >
-          {/* LLM Model Selection */}
+          {/* LLM Model Support List */}
           <div className="p-6 rounded-2xl bg-surface-glass border border-surface-border flex flex-col gap-4">
-            <header className="flex flex-col gap-1">
+            <header className="flex flex-col gap-2">
               <h3 className="text-base font-semibold text-text-primary flex items-center gap-2">
                 <md-icon style={{ color: "var(--accent-cyan)", fontSize: 20 }}>auto_awesome</md-icon>
                 Language Model Architecture
               </h3>
-              <p className="text-xs text-text-secondary">
-                Select the LLM model powering both your standalone RAG API and embedded chat widget.
-              </p>
+              <div className="p-3 rounded-lg bg-accent-indigo/10 border border-accent-indigo/20 text-accent-indigo text-xs">
+                We currently don't guarantee specific model selection, as the usage of models depends on the tokens we are left with. Our platform will automatically cascade and select the best available model for your query.
+              </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               {MODEL_OPTIONS.map((model) => {
-                const isSelected = formData.llmModel === model.id;
                 return (
-                  <button
+                  <div
                     key={model.id}
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, llmModel: model.id }))}
-                    className={`p-4 rounded-xl border text-left flex flex-col justify-between gap-3 transition-all relative ${
-                      isSelected
-                        ? "border-accent-cyan bg-accent-cyan/10 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
-                        : "border-surface-border bg-surface-card hover:border-surface-border/80 hover:bg-surface-border/20"
-                    }`}
+                    className="p-4 rounded-xl border border-surface-border bg-surface-card flex flex-col justify-between gap-3 opacity-90"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-sm font-semibold text-text-primary">{model.name}</span>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30">
+                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-surface-border text-text-secondary">
                           {model.tag}
                         </span>
                       </div>
                       <p className="text-xs text-text-tertiary leading-relaxed">{model.desc}</p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-surface-border/40 text-xs text-text-tertiary font-mono">
+                    <div className="flex items-center justify-between pt-2 border-t border-surface-border/40 text-[11px] text-text-tertiary font-mono">
                       <span>{model.id}</span>
-                      {isSelected && (
-                        <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>check_circle</md-icon>
-                      )}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -589,17 +603,37 @@ export default function ProjectSettingsPage({ params }) {
                 <md-icon style={{ color: "var(--accent-cyan)", fontSize: 18 }}>assignment</md-icon>
                 Custom System Directives / Prompt Instructions
               </label>
-              <p className="text-xs text-text-secondary">
-                Add strict guidelines or persona instructions appended to every RAG completion prompt.
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-text-secondary">
+                  Add strict guidelines or persona instructions appended to every RAG completion prompt.
+                </p>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                  (formData.systemInstructions?.trim().split(/\s+/).filter(Boolean).length || 0) >= 200 
+                    ? "bg-red-500/10 text-red-400 border-red-500/30" 
+                    : "bg-surface-border/50 text-text-tertiary border-surface-border"
+                }`}>
+                  {formData.systemInstructions?.trim().split(/\s+/).filter(Boolean).length || 0} / 200 words
+                </span>
+              </div>
               <textarea
                 rows={4}
                 value={formData.systemInstructions}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, systemInstructions: e.target.value }))
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const words = val.trim().split(/\s+/).filter(Boolean);
+                  if (words.length <= 200) {
+                    setFormData((prev) => ({ ...prev, systemInstructions: val }));
+                  } else {
+                    const truncated = words.slice(0, 200).join(" ");
+                    setFormData((prev) => ({ ...prev, systemInstructions: truncated }));
+                  }
+                }}
                 placeholder="e.g. Always respond in bullet points. If asked about pricing, direct the user to the contact form..."
-                className="w-full p-4 rounded-xl bg-surface-card border border-surface-border text-text-primary text-sm focus:border-accent-cyan focus:outline-none transition-colors leading-relaxed font-mono"
+                className={`w-full p-4 rounded-xl bg-surface-card border text-text-primary text-sm focus:outline-none transition-colors leading-relaxed font-mono ${
+                  (formData.systemInstructions?.trim().split(/\s+/).filter(Boolean).length || 0) >= 200 
+                    ? "border-red-500/50 focus:border-red-500" 
+                    : "border-surface-border focus:border-accent-cyan"
+                }`}
               />
             </div>
           </div>
