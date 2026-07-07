@@ -14,7 +14,6 @@ async function triggerQStashEvent(destination, payload) {
     const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
     const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
 
-    console.log(`[QSTASH QUEUE] Publishing settings event to ${publishUrl}...`);
     try {
       await fetch(publishUrl, {
         method: "POST",
@@ -26,7 +25,6 @@ async function triggerQStashEvent(destination, payload) {
         body: JSON.stringify(payload)
       });
     } catch (err) {
-      console.error(`[QSTASH QUEUE ERROR]`, err.message);
     }
   }
 
@@ -143,7 +141,6 @@ export async function getProjectSettingsAction(userId, projectId) {
     await redisSet(cacheKey, result, 3600); // 1 hr TTL
     return result;
   } catch (err) {
-    console.error("[GET_PROJECT_SETTINGS_ERROR]", err);
     return { success: false, error: err.message || "Failed to load settings" };
   }
 }
@@ -260,7 +257,6 @@ export async function updateProjectSettingsAction(userId, projectId, payload) {
 
     return { success: true };
   } catch (err) {
-    console.error("[UPDATE_PROJECT_SETTINGS_ERROR]", err);
     return { success: false, error: err.message || "Failed to update settings" };
   }
 }
@@ -301,7 +297,6 @@ export async function regenerateApiKeyAction(userId, projectId) {
 
     return { success: true, secretKey: rawSecret };
   } catch (err) {
-    console.error("[REGENERATE_API_KEY_ERROR]", err);
     return { success: false, error: err.message || "Failed to regenerate API key" };
   }
 }
@@ -351,7 +346,6 @@ export async function deleteProjectAction(userId, projectId, confirmSlug) {
 
     return { success: true };
   } catch (err) {
-    console.error("[DELETE_PROJECT_ERROR]", err);
     return { success: false, error: err.message || "Failed to delete project" };
   }
 }

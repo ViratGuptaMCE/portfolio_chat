@@ -47,7 +47,6 @@ export default async function widgetRoutes(server) {
             });
           }
         } catch (e) {
-          console.warn('[WIDGET CONFIG ORIGIN WARN]', e.message);
         }
       }
 

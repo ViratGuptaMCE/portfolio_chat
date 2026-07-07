@@ -13,7 +13,6 @@ async function triggerQStashEvent(destination, payload) {
     const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
     const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
 
-    console.log(`[QSTASH QUEUE] Publishing event to ${publishUrl}...`);
     try {
       await fetch(publishUrl, {
         method: "POST",
@@ -25,7 +24,6 @@ async function triggerQStashEvent(destination, payload) {
         body: JSON.stringify(payload)
       });
     } catch (err) {
-      console.error(`[QSTASH QUEUE ERROR]`, err.message);
     }
   }
 
@@ -154,7 +152,6 @@ export async function getProjectConversations(userId, projectId, { dateFilter = 
 
     return filtered;
   } catch (error) {
-    console.error("Error fetching conversations:", error);
     return [];
   }
 }
@@ -207,7 +204,6 @@ export async function getConversationDetails(userId, projectId, sessionId) {
     await redisSet(cacheKey, result, 600); // 10 min TTL
     return result;
   } catch (error) {
-    console.error("Error fetching conversation details:", error);
     return null;
   }
 }
@@ -240,7 +236,6 @@ export async function toggleFlagConversation(userId, projectId, sessionId, flagg
 
     return { success: true };
   } catch (error) {
-    console.error("Error flagging conversation:", error);
     return { success: false, error: error.message };
   }
 }
@@ -271,7 +266,6 @@ export async function deleteConversation(userId, projectId, sessionId) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error deleting conversation:", error);
     return { success: false, error: error.message };
   }
 }

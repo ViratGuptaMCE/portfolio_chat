@@ -13,12 +13,10 @@ export async function redisGet(key) {
     if (!res.ok) return null;
     const data = await res.json();
     if (data && data.result) {
-      console.log(`[REDIS HIT] Cache hit for key: "${key}"`);
       return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
     }
     return null;
   } catch (err) {
-    console.error(`[REDIS GET ERROR] Key "${key}":`, err.message);
     return null;
   }
 }
@@ -34,11 +32,7 @@ export async function redisSet(key, value, ttlSeconds = 3600) {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store'
     });
-    if (res.ok) {
-      console.log(`[REDIS SET] Cached key "${key}" in Upstash Redis (TTL: ${ttlSeconds}s)`);
-    }
   } catch (err) {
-    console.error(`[REDIS SET ERROR] Key "${key}":`, err.message);
   }
 }
 
@@ -52,8 +46,6 @@ export async function redisDel(key) {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store'
     });
-    console.log(`[REDIS DEL] Invalidated cache key "${key}" in Upstash Redis`);
   } catch (err) {
-    console.error(`[REDIS DEL ERROR] Key "${key}":`, err.message);
   }
 }

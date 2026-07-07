@@ -14,7 +14,6 @@ async function triggerQStashEvent(destination, payload) {
     const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
     const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
 
-    console.log(`[QSTASH QUEUE] Publishing customizer event to ${publishUrl}...`);
     try {
       await fetch(publishUrl, {
         method: "POST",
@@ -26,7 +25,6 @@ async function triggerQStashEvent(destination, payload) {
         body: JSON.stringify(payload)
       });
     } catch (err) {
-      console.error(`[QSTASH QUEUE ERROR]`, err.message);
     }
   }
 
@@ -84,7 +82,6 @@ export async function getWidgetConfig(userId, projectId) {
     await redisSet(cacheKey, result, 3600); // 1 hr TTL
     return result;
   } catch (error) {
-    console.error("Error in getWidgetConfig:", error);
     return null;
   }
 }
@@ -120,7 +117,6 @@ export async function saveDraftConfig(userId, projectId, draftConfig) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error saving draft config:", error);
     return { success: false, error: error.message };
   }
 }
@@ -165,7 +161,6 @@ export async function publishWidgetConfig(userId, projectId, draftConfig) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error publishing widget config:", error);
     return { success: false, error: error.message };
   }
 }
@@ -188,7 +183,6 @@ export async function resetSectionConfig(userId, projectId, currentDraft, sectio
 
     return await saveDraftConfig(userId, projectId, updatedDraft);
   } catch (error) {
-    console.error("Error resetting section config:", error);
     return { success: false, error: error.message };
   }
 }
@@ -201,7 +195,6 @@ export async function resetAllConfig(userId, projectId) {
   try {
     return await saveDraftConfig(userId, projectId, DEFAULT_WIDGET_CONFIG);
   } catch (error) {
-    console.error("Error resetting all config:", error);
     return { success: false, error: error.message };
   }
 }

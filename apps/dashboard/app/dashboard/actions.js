@@ -21,7 +21,6 @@ export async function getUserProjects(userId) {
       lastUpdated: p.updatedAt ? p.updatedAt.toLocaleDateString() : "Just now"
     }));
   } catch (error) {
-    console.error("Error fetching projects:", error);
     return [];
   }
 }
@@ -53,7 +52,6 @@ export async function createProject(userId, name) {
     
     return { success: true, project: newProject, rawApiKey };
   } catch (error) {
-    console.error("Error creating project:", error);
     return { success: false, error: "Failed to create project" };
   }
 }
@@ -86,7 +84,6 @@ export async function getProjectById(userId, projectId) {
 
     return project;
   } catch (error) {
-    console.error("Error fetching project:", error);
     return null;
   }
 }
@@ -117,7 +114,6 @@ export async function getProjectSetupStatus(userId, projectId) {
       isFullyConfigured: hasSettings && hasWidgetConfig
     };
   } catch (error) {
-    console.error("Error fetching project setup status:", error);
     return { hasSettings: true, hasWidgetConfig: true, isFullyConfigured: true };
   }
 }
@@ -149,7 +145,6 @@ export async function deleteProject(userId, projectId) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error deleting project:", error);
     return { success: false, error: "Failed to delete project" };
   }
 }
@@ -198,9 +193,6 @@ export async function getKnowledgeEntries(userId, projectId) {
         const itemAgeMs =
           now - new Date(item.updatedAt || item.createdAt).getTime();
         if (itemAgeMs > 1200000) {
-          console.warn(
-            `[AUTO-HEAL] Knowledge ${item.id} stuck in '${item.status}' for ${Math.round(itemAgeMs / 1000)}s. Auto-healing status to 'failed'.`,
-          );
           await db
             .update(knowledgeEntries)
             .set({ status: "ready", updatedAt: new Date() })
@@ -222,7 +214,6 @@ export async function getKnowledgeEntries(userId, projectId) {
     }
     return result;
   } catch (error) {
-    console.error("Error fetching knowledge entries:", error);
     return [];
   }
 }
@@ -238,7 +229,6 @@ async function triggerIngestionWebhook(payload) {
     const cleanBase = rawQStashUrl.replace(/\/+$/, "").replace(/\/v2\/publish$/, "");
     const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
 
-    console.log(`[QSTASH QUEUE] Publishing ingestion job to Upstash QStash at ${publishUrl}...`);
     try {
       const res = await fetch(publishUrl, {
         method: "POST",
@@ -254,16 +244,9 @@ async function triggerIngestionWebhook(payload) {
       let data = {};
       try { data = JSON.parse(resText); } catch (e) { data = { text: resText }; }
 
-      if (res.ok) {
-        console.log(`[QSTASH QUEUE SUCCESS] Message queued with QStash messageId: ${data.messageId || JSON.stringify(data)}`);
-      } else {
-        console.warn(`[QSTASH QUEUE NOTE] QStash HTTP status: ${res.status} (${resText})`);
-      }
     } catch (err) {
-      console.error(`[QSTASH QUEUE ERROR] Failed to publish to QStash:`, err.message);
     }
   } else if (qstashToken && isLocalTarget) {
-    console.log(`[QSTASH DEV NOTE] QStash requires a public target URL (e.g. https://api.portfoliochat.dev). Local target (${apiUrl}) bypassed for direct local webhook execution.`);
   }
 
   // Direct HTTP call fallback (for local development)
@@ -272,8 +255,7 @@ async function triggerIngestionWebhook(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-    .then((res) => console.log(`[INGEST API TRIGGER] Direct ingestion response status: ${res.status}`))
-    .catch((err) => console.log(`[INGEST API TRIGGER] Direct API trigger: ${err.message}`));
+  
 }
 
 async function triggerVectorDeletionWebhook(payload) {
@@ -290,9 +272,7 @@ async function triggerVectorDeletionWebhook(payload) {
       .replace(/\/v2\/publish$/, "");
     const publishUrl = `${cleanBase}/v2/publish/${destinationUrl}`;
 
-    console.log(
-      `[QSTASH QUEUE] Publishing vector deletion job to Upstash QStash at ${publishUrl}...`,
-    );
+    
     try {
       await fetch(publishUrl, {
         method: "POST",
@@ -304,10 +284,7 @@ async function triggerVectorDeletionWebhook(payload) {
         body: JSON.stringify(payload),
       });
     } catch (err) {
-      console.error(
-        `[QSTASH QUEUE ERROR] Failed to publish vector deletion to QStash:`,
-        err.message,
-      );
+      
     }
   }
 
@@ -317,16 +294,7 @@ async function triggerVectorDeletionWebhook(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   })
-    .then((res) =>
-      console.log(
-        `[VECTOR DELETE API TRIGGER] Direct vector deletion response status: ${res.status}`,
-      ),
-    )
-    .catch((err) =>
-      console.log(
-        `[VECTOR DELETE API TRIGGER] Direct API trigger: ${err.message}`,
-      ),
-    );
+    
 }
 
 async function incrementDailyUsage(userId, type) {
@@ -355,7 +323,6 @@ async function incrementDailyUsage(userId, type) {
         .where(eq(userDailyUsage.id, existing.id));
     }
   } catch (error) {
-    console.error("Error incrementing daily usage:", error);
   }
 }
 
@@ -409,7 +376,6 @@ export async function getQuotaUsage(userId, projectId) {
       }
     };
   } catch (error) {
-    console.error("Error fetching quota usage:", error);
     return null;
   }
 }
@@ -465,7 +431,6 @@ export async function createKnowledgeEntry(userId, projectId, { title, category 
 
     return { success: true, entry: newEntry };
   } catch (error) {
-    console.error("Error creating knowledge entry:", error);
     return { success: false, error: error.message };
   }
 }
@@ -499,7 +464,6 @@ export async function updateKnowledgeEntry(userId, projectId, entryId, { title, 
 
     // Purge previous vector chunks from Cloudflare Vectorize DB
     if (existing.chunkCount && existing.chunkCount > 0) {
-      console.log(`[ENTRY EDIT] Purging ${existing.chunkCount} old vector chunks for entry ${entryId}...`);
       triggerVectorDeletionWebhook({ entryId, chunkCount: existing.chunkCount, projectId });
     }
 
@@ -538,7 +502,6 @@ export async function updateKnowledgeEntry(userId, projectId, entryId, { title, 
 
     return { success: true, entry: updatedEntry };
   } catch (error) {
-    console.error("Error updating knowledge entry:", error);
     return { success: false, error: error.message };
   }
 }
@@ -565,7 +528,6 @@ export async function deleteKnowledgeEntry(userId, projectId, entryId) {
     await redisDel(`knowledge:${projectId}`);
     return { success: true };
   } catch (e) {
-    console.error("Error deleting knowledge entry:", e);
     return { success: false };
   }
 }
@@ -607,7 +569,6 @@ export async function getDocuments(userId, projectId) {
       if (item.status === 'processing' || item.status === 'pending') {
         const itemAgeMs = now - new Date(item.updatedAt || item.createdAt).getTime();
         if (itemAgeMs > 60000) {
-          console.warn(`[INGEST MONITOR] Document ${item.id} stuck in '${item.status}' for ${Math.round(itemAgeMs / 1000)}s. Setting status to 'failed'.`);
           await db.update(documents).set({ status: 'failed', errorMessage: 'Vector embedding timeout', updatedAt: new Date() }).where(eq(documents.id, item.id));
           item.status = 'failed';
           updatedAny = true;
@@ -625,7 +586,6 @@ export async function getDocuments(userId, projectId) {
 
     return result;
   } catch (error) {
-    console.error("Error fetching documents:", error);
     return [];
   }
 }
@@ -656,22 +616,18 @@ export async function getDocumentText(userId, projectId, documentId) {
 
     return doc || null;
   } catch (error) {
-    console.error("Error fetching document text:", error);
     return null;
   }
 }
 
 export async function uploadDocument(userId, projectId, formData) {
-  console.log(`[DOC UPLOAD START] Initiated document upload for userId: ${userId}, projectId: ${projectId}`);
   if (!userId || !projectId || !formData) {
-    console.error("[DOC UPLOAD ERROR] Invalid input parameters.");
     throw new Error("Invalid input");
   }
 
   try {
     const file = formData.get("file");
     if (!file) {
-      console.error("[DOC UPLOAD ERROR] No file found in FormData.");
       return { success: false, error: "No file provided" };
     }
 
@@ -679,32 +635,25 @@ export async function uploadDocument(userId, projectId, formData) {
     const fileType = fileName.split('.').pop()?.toLowerCase() || 'unknown';
 
     if (fileType !== 'pdf') {
-      console.error("[DOC UPLOAD ERROR] Invalid file type:", fileType);
       return { success: false, error: "Only PDF files are allowed" };
     }
 
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB limit
     if (file.size > MAX_SIZE) {
-      console.error(`[DOC UPLOAD ERROR] File size ${file.size} bytes exceeds 5MB limit.`);
       return { success: false, error: "File size exceeds 5MB limit" };
     }
-
-    console.log(`[DOC UPLOAD] File received: "${fileName}" (type: ${fileType}, size: ${file.size} bytes)`);
 
     // Extract text content from file using real pdf-parse library for PDFs
     let extractedText = "";
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
       if (fileType === 'pdf') {
-        console.log(`[DOC UPLOAD] Parsing PDF binary buffer with pdf-parse...`);
         const pdfData = await pdfParse(buffer);
         extractedText = pdfData.text ? pdfData.text.trim() : "";
-        console.log(`[DOC UPLOAD] pdf-parse successfully extracted ${extractedText.length} chars from ${pdfData.numpages || 1} pages.`);
       } else {
         extractedText = buffer.toString('utf8').trim();
       }
     } catch (readErr) {
-      console.error("[DOC UPLOAD ERROR] Failed to parse file text with pdf-parse:", readErr);
       extractedText = `Content from ${fileName}`;
     }
 
@@ -713,7 +662,6 @@ export async function uploadDocument(userId, projectId, formData) {
     }
 
     const estimatedChunks = Math.max(1, Math.ceil(extractedText.length / 1750));
-    console.log(`[DOC UPLOAD] Storing document. extractedText length: ${extractedText.length} chars (~${estimatedChunks} chunks).`);
 
     // Quota pre-validation
     const quota = await getQuotaUsage(userId, projectId);
@@ -737,7 +685,6 @@ export async function uploadDocument(userId, projectId, formData) {
       chunkCount: estimatedChunks
     }).returning();
 
-    console.log(`[DOC UPLOAD SUCCESS] Saved document ID: ${newDoc.id} with extractedText length ${newDoc.extractedText?.length || 0}. Status set to 'processing'.`);
 
     // Increment daily PDF uploads counter
     await incrementDailyUsage(userId, 'pdf');
@@ -750,7 +697,6 @@ export async function uploadDocument(userId, projectId, formData) {
 
     return { success: true, document: newDoc };
   } catch (error) {
-    console.error("[DOC UPLOAD ERROR] Failed to process document upload:", error);
     return { success: false, error: error.message };
   }
 }
@@ -781,7 +727,6 @@ export async function deleteDocument(userId, projectId, documentId) {
     await redisDel(`documents:${projectId}`);
     return { success: true };
   } catch (e) {
-    console.error("Error deleting document:", e);
     return { success: false };
   }
 }
@@ -799,7 +744,6 @@ export async function regenerateProjectApiKey(userId, projectId) {
 
     return { success: true, rawApiKey };
   } catch (error) {
-    console.error("Error regenerating API key:", error);
     return { success: false, error: "Failed to regenerate API key" };
   }
 }
@@ -819,7 +763,6 @@ export async function getWebsiteSources(userId, projectId) {
       if (item.status === 'processing' || item.status === 'pending' || item.status === 'scraping') {
         const itemAgeMs = now - new Date(item.updatedAt || item.createdAt).getTime();
         if (itemAgeMs > 1200000) {
-          console.warn(`[AUTO-HEAL] WebsiteSource ${item.id} stuck in '${item.status}' for ${Math.round(itemAgeMs / 1000)}s. Auto-healing status to 'failed'.`);
           await db.update(websiteSources).set({ status: 'ready', updatedAt: new Date() }).where(eq(websiteSources.id, item.id));
           item.status = 'failed';
           updatedAny = true;
@@ -836,7 +779,6 @@ export async function getWebsiteSources(userId, projectId) {
     }
     return data;
   } catch (error) {
-    console.error("Error fetching website sources:", error);
     return [];
   }
 }
@@ -884,7 +826,6 @@ export async function fetchGithubRepos(username) {
 
     return { success: true, username: cleanUser, repos: formattedRepos };
   } catch (error) {
-    console.error("Error fetching GitHub repos:", error);
     return { success: false, error: error.message || "Failed to connect to GitHub" };
   }
 }
@@ -931,7 +872,6 @@ export async function fetchGithubReadme(username, repoName, defaultBranch = "mai
 
     return { success: false, error: `No README.md found in repository "${cleanUser}/${cleanRepo}".` };
   } catch (error) {
-    console.error("Error fetching GitHub README:", error);
     return { success: false, error: error.message || "Failed to fetch README" };
   }
 }
@@ -990,7 +930,6 @@ export async function addWebsiteSource(userId, projectId, rawUrl, preFetchedTitl
 
     return { success: true, item: inserted };
   } catch (error) {
-    console.error("Error adding website source:", error);
     return { success: false, error: error.message || "Failed to process website URL" };
   }
 }
@@ -1017,7 +956,6 @@ export async function deleteWebsiteSource(userId, projectId, websiteId) {
     await redisDel(`website_sources:${projectId}`);
     return { success: true };
   } catch (e) {
-    console.error("Error deleting website source:", e);
     return { success: false, error: "Failed to delete website source" };
   }
 }

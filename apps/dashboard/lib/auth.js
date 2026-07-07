@@ -26,7 +26,6 @@ const sendEmailAsync = async (to, subject, html) => {
       subject,
       html,
     });
-    console.log(`[MAILER] Successfully sent email to ${to}`);
   } catch (err) {
     throw new Error("Failed to send email. Please check server configuration or logs.");
   }
@@ -63,7 +62,6 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      console.log(`\n\n[VERIFICATION URL] for ${user.email}:\n${url}\n\n`);
       await sendEmailAsync(
         user.email,
         "Verify your PortfolioChat Account",
@@ -86,7 +84,6 @@ export const auth = betterAuth({
   plugins: [
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        console.log(`\n\n[MAGIC LINK URL] for ${email}:\n${url}\n\n`);
         await sendEmailAsync(
           email,
           "Sign in to PortfolioChat",

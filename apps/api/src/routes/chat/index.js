@@ -43,12 +43,10 @@ async function fetchLLMResponseWithFallback(systemPrompt, userMessage, temperatu
 
   for (const config of configs) {
     if (!config.key) {
-      console.warn(`[CHAT API FALLBACK] Skipping ${config.provider} - missing API key.`);
       continue;
     }
 
     try {
-      console.log(`[CHAT API FALLBACK] Trying ${config.provider} with model '${config.model}'...`);
       
       const res = await fetch(config.url, {
         method: "POST",
@@ -76,10 +74,8 @@ async function fetchLLMResponseWithFallback(systemPrompt, userMessage, temperatu
         }
       } else {
         const errText = await res.text();
-        console.error(`[CHAT API FALLBACK ERROR] ${config.provider} ${config.model} failed. Status ${res.status}: ${errText}`);
       }
     } catch (err) {
-      console.error(`[CHAT API FALLBACK EXCEPTION] ${config.provider} ${config.model} exception:`, err.message);
     }
   }
 
@@ -116,8 +112,6 @@ export default async function (server) {
     }
 
     try {
-      // 1. Authenticate & Fetch Project from DB via SHA-256 Key Hash or Widget Token
-      console.log("\n\n\n\n", finalApiKey , "\n\n\n\n")
       const hashedKey = crypto.createHash('sha256').update(finalApiKey).digest('hex');
       const project = await db.query.projects.findFirst({
         where: or(
@@ -200,7 +194,6 @@ export default async function (server) {
               }
             }
           } catch (e) {
-            console.warn('[CHAT API ORIGIN WARN]', e.message);
           }
         }
 
@@ -219,7 +212,6 @@ export default async function (server) {
           }
           await redisSet(rateKey, parseInt(currentCount, 10) + 1, 60);
         } catch (redisErr) {
-          console.warn('[RATE LIMIT REDIS WARN]', redisErr.message);
         }
       }
 
@@ -238,7 +230,6 @@ export default async function (server) {
       
       if (cfWorkerUrl && cfToken) {
         try {
-          console.log(`[CHAT API] Querying Cloudflare Vectorize DB for project ${activeProjectId}...`);
           const searchRes = await fetch(`${cfWorkerUrl}/search`, {
             method: 'POST',
             headers: {
@@ -270,13 +261,11 @@ export default async function (server) {
             }
           }
         } catch (searchErr) {
-          console.error('[CHAT API] Vector search fallback to DB due to error:', searchErr.message);
         }
       }
 
       // Fallback: If zero vector chunks retrieved, pull Knowledge Base items directly from Postgres
       if (retrievedChunks.length === 0) {
-        console.log(`[CHAT API] Falling back to DB text retrieval for project ${activeProjectId}...`);
         const [entries, docs, webs] = await Promise.all([
           db.query.knowledgeEntries.findMany({
             where: eq(knowledgeEntries.projectId, activeProjectId),
@@ -408,7 +397,6 @@ ${contextBlock}`;
             createdAt: new Date()
           });
         } catch (logErr) {
-          console.error('[CHAT API LOGGING ERROR]', logErr.message);
         }
       })();
 
@@ -437,7 +425,6 @@ ${contextBlock}`;
       });
 
     } catch (error) {
-      console.error('[CHAT API ERROR]', error);
       return reply.status(500).send({
         success: false,
         error: 'Internal server error processing chat message',

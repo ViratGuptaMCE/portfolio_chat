@@ -12,7 +12,6 @@ async function verifyQStashSignature(request, reply) {
     const signature = request.headers['upstash-signature'];
     if (!signature || typeof signature !== 'string') {
       if (process.env.NODE_ENV !== 'production' || !process.env.QSTASH_CURRENT_SIGNING_KEY) {
-        console.log("[QSTASH DEV] Skipping Upstash signature verification for local development test call.");
         return;
       }
       reply.status(401).send({ error: 'Missing Upstash signature' });
@@ -38,10 +37,8 @@ export default async function (server) {
   // Ingest Webhook - Triggered by Next.js or via QStash
   server.post('/ingest', { preHandler: verifyQStashSignature }, async (request, reply) => {
     const { documentId, entryId, websiteId, projectId } = request.body || {};
-    console.log(`[API INGEST START] Ingestion requested: documentId=${documentId}, entryId=${entryId}, websiteId=${websiteId}, projectId=${projectId}`);
     
     if ((!documentId && !entryId && !websiteId) || !projectId) {
-      console.error("[API INGEST ERROR] Missing documentId/entryId/websiteId or projectId.");
       return reply.status(400).send({ error: 'Missing documentId/entryId/websiteId or projectId' });
     }
 
@@ -69,7 +66,6 @@ export default async function (server) {
         const chunks = await splitter.createDocuments([formattedText]);
         const chunkTexts = chunks.map(c => c.pageContent);
 
-        console.log(`[API INGEST] Knowledge entry "${entry.title}" split into ${chunks.length} chunks. Pushing vector embeddings to Cloudflare Vectorize...`);
 
         // Strictly await vector chunk embeddings at Cloudflare Worker
         if (cfWorkerUrl && cfToken) {
@@ -106,7 +102,6 @@ export default async function (server) {
           .where(eq(knowledgeEntries.id, entryId));
         await redisDel(`knowledge:${projectId}`);
 
-        console.log(`[API INGEST SUCCESS] Knowledge entry ${entryId} embedded in Cloudflare Vectorize. Status set to 'ready'.`);
         return { success: true, type: 'knowledge_entry', id: entryId, chunks: chunks.length };
       }
 
@@ -123,7 +118,6 @@ export default async function (server) {
         const chunks = await splitter.createDocuments([doc.extractedText]);
         const chunkTexts = chunks.map(c => c.pageContent);
 
-        console.log(`[API INGEST] Document "${doc.fileName}" split into ${chunks.length} chunks. Pushing vector embeddings to Cloudflare Vectorize...`);
 
         // Strictly await vector chunk embeddings at Cloudflare Worker
         if (cfWorkerUrl && cfToken) {
@@ -159,7 +153,6 @@ export default async function (server) {
           .where(eq(documents.id, documentId));
         await redisDel(`documents:${projectId}`);
 
-        console.log(`[API INGEST SUCCESS] Document ${documentId} embedded in Cloudflare Vectorize. Status set to 'ready'.`);
         return { success: true, type: 'document', id: documentId, chunks: chunks.length };
       }
 
@@ -207,7 +200,6 @@ export default async function (server) {
             }
 
             if (!extractedText || extractedText.length < 30) {
-              console.log(`[API INGEST] Website ${web.url} sparse HTML. Attempting Jina Reader SPA fallback...`);
               const jinaRes = await fetch(`https://r.jina.ai/${web.url}`);
               if (jinaRes.ok) {
                 const jinaText = await jinaRes.text();
@@ -221,7 +213,6 @@ export default async function (server) {
               }
             }
           } catch (scrapeErr) {
-            console.error(`[API INGEST SCRAPE ERROR] ${scrapeErr.message}`);
           }
         }
 
@@ -233,7 +224,6 @@ export default async function (server) {
         const chunks = await splitter.createDocuments([formattedText]);
         const chunkTexts = chunks.map(c => c.pageContent);
 
-        console.log(`[API INGEST] Website "${title}" split into ${chunks.length} chunks. Pushing vector embeddings to Cloudflare Vectorize...`);
 
         // Strictly await vector chunk embeddings at Cloudflare Worker
         if (cfWorkerUrl && cfToken) {
@@ -269,12 +259,10 @@ export default async function (server) {
           .where(eq(websiteSources.id, websiteId));
         await redisDel(`website_sources:${projectId}`);
 
-        console.log(`[API INGEST SUCCESS] Website ${websiteId} embedded in Cloudflare Vectorize. Status set to 'ready'.`);
         return { success: true, type: 'website', id: websiteId, chunks: chunks.length };
       }
 
     } catch (error) {
-      console.error("[API INGEST FAILED]", error);
       
       if (documentId) {
         await db.update(documents)
@@ -305,10 +293,8 @@ export default async function (server) {
   server.post('/delete-vectors', { preHandler: verifyQStashSignature }, async (request, reply) => {
     const { documentId, entryId, chunkCount, projectId } = request.body || {};
     const targetId = documentId || entryId;
-    console.log(`[API VECTOR DELETE START] Deleting vectors for id: ${targetId}, chunkCount: ${chunkCount}, projectId: ${projectId}`);
 
     if (!targetId || !chunkCount) {
-      console.error("[API VECTOR DELETE ERROR] Missing documentId/entryId or chunkCount.");
       return reply.status(400).send({ error: 'Missing documentId/entryId or chunkCount' });
     }
 
@@ -316,7 +302,6 @@ export default async function (server) {
     const cfToken = process.env.CLOUDFLARE_WORKER_AUTH_TOKEN || process.env.CF_WORKER_AUTH_TOKEN;
 
     if (!cfWorkerUrl || !cfToken) {
-      console.warn("[API VECTOR DELETE WARNING] Cloudflare worker URL/Token not configured.");
       return { success: false, message: "Cloudflare worker not configured" };
     }
 
@@ -332,15 +317,12 @@ export default async function (server) {
 
       if (!res.ok) {
         const errText = await res.text();
-        console.error(`[API VECTOR DELETE ERROR] Cloudflare Worker returned ${res.status}: ${errText}`);
         return reply.status(res.status).send({ error: errText });
       }
 
       const data = await res.json();
-      console.log(`[API VECTOR DELETE COMPLETE] Successfully deleted ${data.deletedCount || chunkCount} vector chunks from Cloudflare Vectorize.`);
       return { success: true, ...data };
     } catch (error) {
-      console.error("[API VECTOR DELETE FAILED]", error);
       return reply.status(500).send({ error: error.message });
     }
   });
@@ -348,7 +330,6 @@ export default async function (server) {
   // Settings Updated Webhook
   server.post('/settings-updated', { preHandler: verifyQStashSignature }, async (request, reply) => {
     const { projectId, updatedAt } = request.body || {};
-    console.log(`[API WEBHOOK] Settings updated for project ${projectId} at ${updatedAt || new Date().toISOString()}`);
     await redisDel(`settings:${projectId}`).catch(() => {});
     await redisDel(`project:${projectId}:settings`).catch(() => {});
     return { success: true, projectId };
@@ -357,7 +338,6 @@ export default async function (server) {
   // API Key Regenerated Webhook
   server.post('/apikey-regenerated', { preHandler: verifyQStashSignature }, async (request, reply) => {
     const { projectId } = request.body || {};
-    console.log(`[API WEBHOOK] API Key regenerated for project ${projectId}`);
     await redisDel(`settings:${projectId}`).catch(() => {});
     return { success: true, projectId };
   });
@@ -365,7 +345,7 @@ export default async function (server) {
   // Widget Published Webhook
   server.post('/widget-published', { preHandler: verifyQStashSignature }, async (request, reply) => {
     const { projectId, publishedAt } = request.body || {};
-    console.log(`[API WEBHOOK] Widget published for project ${projectId} at ${publishedAt || new Date().toISOString()}`);
+    
     await redisDel(`widget_config:${projectId}`).catch(() => {});
     return { success: true, projectId };
   });
@@ -373,7 +353,6 @@ export default async function (server) {
   // Analytics Event Webhook
   server.post('/analytics', { preHandler: verifyQStashSignature }, async (request, reply) => {
     const { type, projectId, sessionId } = request.body || {};
-    console.log(`[API WEBHOOK] Analytics event '${type}' recorded for project ${projectId}, session ${sessionId}`);
     return { success: true, type, projectId, sessionId };
   });
 }
