@@ -812,29 +812,29 @@ console.log("AI Answer:", data.reply);`;
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-bg-elevated border border-amber-500/40 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl flex flex-col gap-6 relative"
+              className="bg-bg-elevated border border-accent-cyan/40 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl flex flex-col gap-6 relative"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan shrink-0">
                   <md-icon style={{ fontSize: 26 }}>key_visualizer</md-icon>
                 </div>
                 <div className="flex flex-col">
                   <h3 className="text-lg font-semibold text-text-primary">
                     Your Secret API Key
                   </h3>
-                  <span className="text-xs text-amber-400 font-mono font-medium">
+                  <span className="text-xs text-accent-cyan font-mono font-medium">
                     One-Time Security Display
                   </span>
                 </div>
               </div>
 
               {/* Warning Banner */}
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col gap-1">
-                <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+              <div className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-4 flex flex-col gap-1">
+                <span className="text-xs font-semibold text-accent-cyan flex items-center gap-1.5">
                   <md-icon style={{ fontSize: 16 }}>warning</md-icon>
                   This won't be shown again. Store it somewhere safe!
                 </span>
-                <p className="text-xs text-amber-200/80 leading-relaxed mt-1">
+                <p className="text-xs text-cyan-200/80 leading-relaxed mt-1">
                   For security, the server hashes this key using SHA-256 and
                   deletes the raw key from database storage. Once you close this
                   box, this raw key cannot be retrieved or shown again.
@@ -872,7 +872,7 @@ console.log("AI Answer:", data.reply);`;
               <div className="flex items-center justify-end pt-2">
                 <button
                   onClick={() => setNewSecretKeyModal(null)}
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-amber-500/20"
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-accent-cyan to-cyan-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-accent-cyan/20"
                 >
                   <md-icon style={{ fontSize: 18 }}>check_circle</md-icon>
                   <span>I Have Saved My Secret Key</span>

@@ -116,7 +116,9 @@ export default function ProjectSettingsPage({ params }) {
   // Modals for Security & Danger Zone
   const [showRegenModal, setShowRegenModal] = useState(false);
   const [regenConfirmText, setRegenConfirmText] = useState("");
-  const [regenSecretKey, setRegenSecretKey] = useState(null);
+  const [newSecretKeyModal, setNewSecretKeyModal] = useState(null);
+  const [copiedField, setCopiedField] = useState(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -219,15 +221,23 @@ export default function ProjectSettingsPage({ params }) {
   // Regenerate API Key Modal Action
   const handleRegenerateKey = async () => {
     if (regenConfirmText !== "I confirm to regenerate the key") return;
-    setSaving(true);
+    setIsRegenerating(true);
     const res = await regenerateApiKeyAction(session.user.id, projectId);
     if (res.success) {
-      setRegenSecretKey(res.secretKey);
+      setNewSecretKeyModal(res.secretKey);
       setProjectData((prev) => ({ ...prev, hasApiKey: true }));
     } else {
       setError(res.error || "Failed to regenerate key");
     }
-    setSaving(false);
+    setIsRegenerating(false);
+    setShowRegenModal(false);
+    setRegenConfirmText("");
+  };
+
+  const copyToClipboard = (text, fieldName) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    setTimeout(() => setCopiedField(null), 2000);
   };
 
   // Delete Project Modal Action
@@ -999,86 +1009,172 @@ export default function ProjectSettingsPage({ params }) {
         </motion.div>
       )}
 
-      {/* REGENERATE API KEY MODAL (Non-Pastable Verification) */}
+      {/* REGENERATE API KEY MODAL (Overview-Style Confirmation) */}
       <AnimatePresence>
         {showRegenModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md p-6 rounded-2xl bg-surface-card border border-surface-border shadow-2xl flex flex-col gap-5"
+              className="bg-bg-elevated border border-surface-border-strong rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl flex flex-col gap-6"
             >
-              <header className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500">
-                  <md-icon style={{ fontSize: 20 }}>warning</md-icon>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                  <md-icon style={{ fontSize: 24 }}>warning</md-icon>
                 </div>
-                <div>
-                  <h3 className="text-base font-semibold text-text-primary">Regenerate Secret Key</h3>
-                  <p className="text-xs text-text-tertiary">Invalidates your current secret key immediately.</p>
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-semibold text-text-primary">
+                    Regenerate Secret API Key?
+                  </h3>
+                  <p className="text-xs text-text-tertiary font-mono">
+                    Invalidates previous SHA-256 hash immediately.
+                  </p>
                 </div>
-              </header>
+              </div>
 
-              {regenSecretKey ? (
-                <div className="flex flex-col gap-4">
-                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex flex-col gap-2">
-                    <p className="font-semibold">Save your new secret key now!</p>
-                    <p className="text-[11px] text-emerald-300/80">
-                      This key will only be displayed ONCE. Store it in a secure location.
-                    </p>
-                    <input
-                      type="text"
-                      readOnly
-                      value={regenSecretKey}
-                      className="w-full p-2.5 rounded-lg bg-black/40 border border-emerald-500/40 text-emerald-300 font-mono text-xs select-all focus:outline-none"
-                    />
-                  </div>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Regenerating your Secret API Key will immediately revoke your
+                old key. Any external API calls using the old key will stop
+                working.
+              </p>
+
+              {/* Typing Confirmation Requirement (Non-Pastable) */}
+              <div className="flex flex-col gap-2 bg-[#0b0b10] border border-surface-border rounded-2xl p-4">
+                <label className="text-xs text-text-secondary">
+                  To confirm, type{" "}
+                  <span className="font-mono select-none bg-surface-border px-1.5 py-0.5 rounded text-[11px] font-semibold text-red-300">
+                    "I confirm to regenerate the key"
+                  </span>{" "}
+                  below:
+                </label>
+                <input
+                  type="text"
+                  value={regenConfirmText}
+                  onChange={(e) => setRegenConfirmText(e.target.value)}
+                  onPaste={(e) => e.preventDefault()}
+                  onDrop={(e) => e.preventDefault()}
+                  onCopy={(e) => e.preventDefault()}
+                  placeholder="Type exact phrase here..."
+                  className="w-full bg-bg-elevated border border-surface-border rounded-xl px-3.5 py-2.5 text-xs font-mono text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-red-500/60 transition-all select-none"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                />
+                <span className="text-[10px] text-text-tertiary font-mono italic">
+                  * Note: Copy-pasting is disabled. Phrase must be typed
+                  manually.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  onClick={() => {
+                    setShowRegenModal(false);
+                    setRegenConfirmText("");
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-surface-glass border border-surface-border text-text-secondary hover:text-white text-sm transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRegenerateKey}
+                  disabled={
+                    isRegenerating ||
+                    regenConfirmText.trim() !==
+                      "I confirm to regenerate the key"
+                  }
+                  className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium text-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shadow-lg shadow-red-500/20"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Regenerating...</span>
+                    </>
+                  ) : (
+                    <span>Yes, Regenerate Key</span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ONE-TIME SECRET API KEY DISPLAY MODAL (Cyan Theme) */}
+      <AnimatePresence>
+        {newSecretKeyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-bg-elevated border border-accent-cyan/40 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl flex flex-col gap-6 relative"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan shrink-0">
+                  <md-icon style={{ fontSize: 26 }}>key_visualizer</md-icon>
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-semibold text-text-primary">
+                    Your Secret API Key
+                  </h3>
+                  <span className="text-xs text-accent-cyan font-mono font-medium">
+                    One-Time Security Display
+                  </span>
+                </div>
+              </div>
+
+              {/* Warning Banner */}
+              <div className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-4 flex flex-col gap-1">
+                <span className="text-xs font-semibold text-accent-cyan flex items-center gap-1.5">
+                  <md-icon style={{ fontSize: 16 }}>warning</md-icon>
+                  This won't be shown again. Store it somewhere safe!
+                </span>
+                <p className="text-xs text-cyan-200/80 leading-relaxed mt-1">
+                  For security, the server hashes this key using SHA-256 and
+                  deletes the raw key from database storage. Once you close this
+                  box, this raw key cannot be retrieved or shown again.
+                </p>
+              </div>
+
+              {/* Secret Key Raw Display Box */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-mono uppercase tracking-widest text-text-tertiary">
+                  Secret API Key
+                </label>
+                <div className="bg-[#0b0b10] border border-surface-border-strong rounded-xl p-4 font-mono text-xs md:text-sm text-emerald-300 flex items-center justify-between gap-3 overflow-hidden">
+                  <span className="truncate selection:bg-emerald-500/30">
+                    {newSecretKeyModal}
+                  </span>
                   <button
-                    onClick={() => {
-                      setShowRegenModal(false);
-                      setRegenSecretKey(null);
-                    }}
-                    className="w-full py-2.5 rounded-xl bg-surface-border text-text-primary text-xs font-semibold hover:bg-surface-border/80"
+                    onClick={() =>
+                      copyToClipboard(newSecretKeyModal, "modalSecretKey")
+                    }
+                    className="px-3 py-1.5 rounded-lg bg-surface-glass border border-surface-border flex items-center gap-1.5 text-xs text-text-secondary hover:text-white transition-all active:scale-95 shrink-0"
                   >
-                    Done & Close
+                    <md-icon style={{ fontSize: 16 }}>
+                      {copiedField === "modalSecretKey"
+                        ? "check"
+                        : "content_copy"}
+                    </md-icon>
+                    <span>
+                      {copiedField === "modalSecretKey" ? "Copied" : "Copy"}
+                    </span>
                   </button>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <p className="text-xs text-text-secondary leading-relaxed">
-                    To confirm key regeneration, type manually:
-                    <br />
-                    <strong className="text-text-primary font-mono select-none">
-                      "I confirm to regenerate the key"
-                    </strong>
-                  </p>
+              </div>
 
-                  <input
-                    type="text"
-                    value={regenConfirmText}
-                    onChange={(e) => setRegenConfirmText(e.target.value)}
-                    onPaste={(e) => e.preventDefault()}
-                    placeholder="Type confirmation phrase here..."
-                    className="w-full px-4 py-2.5 rounded-xl bg-surface-glass border border-surface-border text-text-primary text-xs focus:border-red-500 focus:outline-none"
-                  />
-
-                  <div className="flex items-center gap-3 mt-2">
-                    <button
-                      onClick={() => setShowRegenModal(false)}
-                      className="flex-1 py-2.5 rounded-xl bg-surface-glass border border-surface-border text-text-secondary hover:text-text-primary text-xs font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleRegenerateKey}
-                      disabled={regenConfirmText !== "I confirm to regenerate the key" || saving}
-                      className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-xs font-semibold hover:bg-red-600 disabled:opacity-40 transition-colors"
-                    >
-                      {saving ? "Generating..." : "Regenerate Key"}
-                    </button>
-                  </div>
-                </div>
-              )}
+              {/* Close / Dismiss Action */}
+              <div className="flex items-center justify-end pt-2">
+                <button
+                  onClick={() => setNewSecretKeyModal(null)}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-accent-cyan to-cyan-500 text-black font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-accent-cyan/20"
+                >
+                  <md-icon style={{ fontSize: 18 }}>check_circle</md-icon>
+                  <span>I Have Saved My Secret Key</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

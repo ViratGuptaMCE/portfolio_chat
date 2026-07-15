@@ -55,10 +55,6 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm md:text-base font-medium text-[#666] dark:text-[#aaa] bg-[#fafafa] dark:bg-[#111] px-6 py-2.5 rounded-full border border-[#e5e5e5] dark:border-[#333] shadow-sm">
-            Made with <span className="text-red-500 animate-pulse text-lg">❤️</span> by Virat Gupta
-          </div>
-
           <div className="flex gap-4 items-center">
             <span className="text-[11px] font-bold tracking-widest uppercase border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 rounded-full text-cyan-600 dark:text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)] flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />

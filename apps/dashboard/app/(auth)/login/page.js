@@ -19,6 +19,8 @@ export default function LoginPage() {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("verify") === "true") {
         setSuccessMsg("Account created! A verification link has been sent to your email.");
+      } else if (urlParams.get("verified") === "true") {
+        setSuccessMsg("Email has been verified successfully. You can Login now.");
       }
     }
   }, []);

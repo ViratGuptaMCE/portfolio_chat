@@ -56,18 +56,6 @@ export default function Home() {
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <button
-            onClick={() =>
-              window.open(
-                "https://github.com/viratguptamce/portfolio_chat",
-                "_blank",
-              )
-            }
-            className="text-sm font-medium text-[#666] dark:text-[#aaa] hover:text-black dark:hover:text-white transition-colors hidden sm:block"
-          >
-            GitHub
-          </button>
-
           {isPending ? (
             <div className="w-[84px] h-[36px] bg-[#e5e5e5] dark:bg-[#222] animate-pulse rounded-full" />
           ) : session ? (

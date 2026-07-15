@@ -23,7 +23,7 @@ export default function SignupPage() {
         email,
         password,
         name,
-        callbackURL: "/login?verify=true",
+        callbackURL: "/login?verified=true",
       });
 
       if (error) {
